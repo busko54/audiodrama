@@ -4,6 +4,8 @@ import { useState } from 'react'
 export default function Home() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [audioSrc, setAudioSrc] = useState(null)
+  const [audioLoading, setAudioLoading] = useState(false)
 
   const testParser = async () => {
     setLoading(true)
@@ -19,6 +21,24 @@ export default function Home() {
     setLoading(false)
   }
 
+  const testVoice = async () => {
+    setAudioLoading(true)
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: "It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?",
+        voiceId: 'DEvZo8VdnUy6pZ4CSwUB',
+        tone: 'ominous'
+      })
+    })
+    const data = await response.json()
+    if (data.audio) {
+      setAudioSrc(`data:audio/mpeg;base64,${data.audio}`)
+    }
+    setAudioLoading(false)
+  }
+
   return (
     <main style={{
       minHeight: '100vh',
@@ -28,8 +48,9 @@ export default function Home() {
       fontFamily: 'Georgia, serif'
     }}>
       <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>
-        🎭 AudioDrama Parser Test
+        🎭 AudioDrama Test
       </h1>
+
       <button
         onClick={testParser}
         style={{
@@ -40,11 +61,37 @@ export default function Home() {
           borderRadius: '8px',
           fontSize: '16px',
           cursor: 'pointer',
-          marginBottom: '2rem'
+          marginBottom: '1rem',
+          marginRight: '1rem'
         }}
       >
-        {loading ? 'Parsing...' : 'Test Parser with Dracula Scene'}
+        {loading ? 'Parsing...' : 'Test Parser'}
       </button>
+
+      <button
+        onClick={testVoice}
+        style={{
+          background: '#1a1a6e',
+          color: '#fff',
+          border: 'none',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          fontSize: '16px',
+          cursor: 'pointer',
+          marginBottom: '1rem'
+        }}
+      >
+        {audioLoading ? 'Generating...' : 'Test Voice'}
+      </button>
+
+      {audioSrc && (
+        <div style={{ marginBottom: '2rem' }}>
+          <p style={{ color: '#888', marginBottom: '8px' }}>
+            Generated audio:
+          </p>
+          <audio controls src={audioSrc} style={{ width: '100%' }} />
+        </div>
+      )}
 
       {result && (
         <pre style={{
