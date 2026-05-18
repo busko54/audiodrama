@@ -20,11 +20,11 @@ export async function POST(request) {
       messages: [{
         role: 'user',
         content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
-- speaker: character name or "narrator"
+- speaker: ONLY use these exact names: "narrator", "jonathan harker", "old landlady", "counts driver", "count dracula". If unsure which character is speaking, use "narrator".
 - line: exact text to speak
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
 - emotion: one of [neutral, fearful, terrified, horrified, angry, furious, joyful, sad, grief, tense, anxious, mysterious, curious, disgusted, desperate, relieved, suspicious, confused, determined, resigned, awestruck, lonely]
-- ambience: detect any background sounds that fit the scene naturally
+- ambience: detect any background sounds that fit the scene naturally. Pay special attention to any sounds explicitly mentioned in the text like clocks, bells, animals, weather, crowds and always include them.
 
 Return ONLY valid JSON. No explanation. No markdown. No backticks.
 Chapter:
