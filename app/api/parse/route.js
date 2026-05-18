@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import OpenAI from 'openai'
 
 const client = new OpenAI({
@@ -12,12 +14,12 @@ export async function POST(request) {
     max_tokens: 4000,
     messages: [{
       role: 'user',
-     content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
+      content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
 - speaker: character name or "narrator"
 - line: exact text to speak
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
 - emotion: one of [neutral, fearful, terrified, horrified, angry, furious, joyful, sad, grief, tense, anxious, mysterious, curious, disgusted, desperate, relieved, suspicious, confused, determined, resigned, awestruck, lonely]
-- ambience: do not limit to a list — detect any background sounds that fit the scene naturally (e.g. wolves howling, clock striking midnight, thunder, rain, crowd murmuring, horse hooves, fire crackling, wind, silence, door creaking, chains rattling, church bells, etc.)
+- ambience: detect any background sounds that fit the scene naturally
 
 Return ONLY valid JSON. No explanation. No markdown. No backticks.
 Chapter:
