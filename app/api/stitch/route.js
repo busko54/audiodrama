@@ -2,14 +2,16 @@ export const dynamic = 'force-dynamic'
 
 const voiceMap = {
   'narrator': 'DEvZo8VdnUy6pZ4CSwUB',
-  'jonathan': 'DEvZo8VdnUy6pZ4CSwUB',
   'jonathan harker': 'DEvZo8VdnUy6pZ4CSwUB',
+  'jonathan': 'DEvZo8VdnUy6pZ4CSwUB',
   'old landlady': 'H3A1fZxF1QDywkfaNUAm',
   'unknown woman': 'H3A1fZxF1QDywkfaNUAm',
   'landlady': 'H3A1fZxF1QDywkfaNUAm',
+  'villager': 'H3A1fZxF1QDywkfaNUAm',
   'counts driver': 'SJxWsMKCCRpKoTtslZWp',
   'driver': 'SJxWsMKCCRpKoTtslZWp',
   "count's driver": 'SJxWsMKCCRpKoTtslZWp',
+  'count dracula': 'SJxWsMKCCRpKoTtslZWp',
 }
 
 async function generateAudio(text, voiceId, tone) {
@@ -70,7 +72,7 @@ export async function POST(request) {
     const results = []
 
     for (const block of blocks) {
-      const speakerKey = block.speaker.toLowerCase()
+      const speakerKey = block.speaker.toLowerCase().trim()
       const voiceId = voiceMap[speakerKey] || voiceMap['narrator']
       
       const audio = await generateAudio(block.line, voiceId, block.tone)
