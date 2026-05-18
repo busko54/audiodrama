@@ -4,6 +4,10 @@ export async function POST(request) {
   try {
     const { chapterText } = await request.json()
 
+    if (!process.env.OPENAI_API_KEY) {
+      return Response.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 })
+    }
+
     const { default: OpenAI } = await import('openai')
     
     const client = new OpenAI({
@@ -29,10 +33,13 @@ ${chapterText}`
     })
 
     const text = response.choices[0].message.content
+    console.log('GPT raw response:', text)
+    
     const json = JSON.parse(text)
     return Response.json({ blocks: json })
 
   } catch (error) {
+    console.error('Parse error:', error.message)
     return Response.json({ error: error.message }, { status: 500 })
   }
 }
