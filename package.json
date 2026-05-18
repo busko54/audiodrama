@@ -7,11 +7,11 @@
     "build": "next build",
     "start": "next start"
   },
-  "dependencies": {
-    "next": "14.2.3",
-    "react": "^18",
-    "react-dom": "^18",
-    "anthropic": "^0.39.0",
-    "elevenlabs": "^0.8.0"
-  }
+ "dependencies": {
+  "next": "14.2.3",
+  "react": "^18",
+  "react-dom": "^18",
+  "@anthropic-ai/sdk": "^0.96.0",
+  "elevenlabs": "^0.8.0"
+}
 }
