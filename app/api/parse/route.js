@@ -1,20 +1,21 @@
 export const dynamic = 'force-dynamic'
 
-import OpenAI from 'openai'
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
 export async function POST(request) {
-  const { chapterText } = await request.json()
+  try {
+    const { chapterText } = await request.json()
 
-  const response = await client.chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 4000,
-    messages: [{
-      role: 'user',
-      content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
+    const { default: OpenAI } = await import('openai')
+    
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
+
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 4000,
+      messages: [{
+        role: 'user',
+        content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
 - speaker: character name or "narrator"
 - line: exact text to speak
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
@@ -24,10 +25,14 @@ export async function POST(request) {
 Return ONLY valid JSON. No explanation. No markdown. No backticks.
 Chapter:
 ${chapterText}`
-    }]
-  })
+      }]
+    })
 
-  const text = response.choices[0].message.content
-  const json = JSON.parse(text)
-  return Response.json({ blocks: json })
+    const text = response.choices[0].message.content
+    const json = JSON.parse(text)
+    return Response.json({ blocks: json })
+
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 })
+  }
 }
