@@ -1,5 +1,36 @@
 export const dynamic = 'force-dynamic'
 
+// Make ambience descriptions more specific for better generation
+function enhanceAmbiencePrompt(text) {
+  const enhancements = {
+    'clock': 'loud clock tower bell striking midnight, twelve deep resonant chimes, echoing',
+    'midnight': 'clock tower bells striking midnight, twelve deep resonant chimes echoing in silence',
+    'wolves': 'pack of wolves howling in the dark night, distant and eerie, getting closer',
+    'wind': 'cold mountain wind howling through pine trees and rocks at night',
+    'thunder': 'distant thunder rumbling over mountains, low and ominous',
+    'horses': 'horse hooves galloping fast on dirt road, carriage wheels rattling',
+    'crowd': 'crowd of people murmuring and whispering nervously',
+    'silence': 'complete eerie silence, deep ambient quiet',
+    'snow': 'blizzard wind with snow, cold winter storm howling',
+    'castle': 'dark castle ambient, wind through stone corridors, eerie silence',
+    'dog': 'dog howling mournfully in the night, long agonised wail',
+    'fire': 'crackling fire burning, wood popping',
+    'rain': 'heavy rain falling, storm outside',
+    'train': 'old steam train moving, wheels on tracks, steam hissing',
+  }
+
+  // Check if any keyword matches
+  const lower = text.toLowerCase()
+  for (const [keyword, enhanced] of Object.entries(enhancements)) {
+    if (lower.includes(keyword)) {
+      return enhanced
+    }
+  }
+
+  // If no match, return original with extra context
+  return `${text}, atmospheric sound effect, cinematic quality`
+}
+
 export async function POST(request) {
   try {
     const { ambienceText } = await request.json()
@@ -7,6 +38,9 @@ export async function POST(request) {
     if (!ambienceText || ambienceText === 'none') {
       return Response.json({ audio: null })
     }
+
+    const enhancedPrompt = enhanceAmbiencePrompt(ambienceText)
+    console.log('Ambience prompt:', enhancedPrompt)
 
     const response = await fetch(
       'https://api.elevenlabs.io/v1/sound-generation',
@@ -17,9 +51,9 @@ export async function POST(request) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          text: ambienceText,
+          text: enhancedPrompt,
           duration_seconds: 10,
-          prompt_influence: 0.3
+          prompt_influence: 0.5
         })
       }
     )
