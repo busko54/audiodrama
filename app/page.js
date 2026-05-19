@@ -6,7 +6,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
-  const audioRef = useRef(null)
+  const voiceRef = useRef(null)
+  const ambienceRef = useRef(null)
 
   const runFullTest = async () => {
     setLoading(true)
@@ -30,7 +31,23 @@ export default function Home() {
     })
     const stitchData = await stitchRes.json()
 
-    setBlocks(stitchData.blocks)
+    // Generate ambience for each block
+    const blocksWithAmbience = await Promise.all(
+      stitchData.blocks.map(async (block) => {
+        if (!block.ambience || block.ambience === 'none') {
+          return { ...block, ambienceAudio: null }
+        }
+        const ambienceRes = await fetch('/api/ambience', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ambienceText: block.ambience })
+        })
+        const ambienceData = await ambienceRes.json()
+        return { ...block, ambienceAudio: ambienceData.audio || null }
+      })
+    )
+
+    setBlocks(blocksWithAmbience)
     setLoading(false)
   }
 
@@ -38,6 +55,10 @@ export default function Home() {
     if (index >= blocks.length) {
       setIsPlaying(false)
       setCurrentBlock(-1)
+      if (ambienceRef.current) {
+        ambienceRef.current.pause()
+        ambienceRef.current.src = ''
+      }
       return
     }
     setCurrentBlock(index)
@@ -45,13 +66,32 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (currentBlock >= 0 && blocks[currentBlock]?.audio && audioRef.current) {
-      audioRef.current.src = `data:audio/mpeg;base64,${blocks[currentBlock].audio}`
-      audioRef.current.play()
+    if (currentBlock >= 0 && blocks[currentBlock]) {
+      const block = blocks[currentBlock]
+
+      // Play voice
+      if (block.audio && voiceRef.current) {
+        voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
+        voiceRef.current.volume = 1.0
+        voiceRef.current.play()
+      }
+
+      // Play ambience underneath
+      if (ambienceRef.current) {
+        if (block.ambienceAudio) {
+          ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
+          ambienceRef.current.volume = 0.25
+          ambienceRef.current.loop = true
+          ambienceRef.current.play()
+        } else {
+          ambienceRef.current.pause()
+          ambienceRef.current.src = ''
+        }
+      }
     }
   }, [currentBlock, blocks])
 
-  const handleAudioEnd = () => {
+  const handleVoiceEnd = () => {
     playFrom(currentBlock + 1)
   }
 
@@ -72,7 +112,8 @@ export default function Home() {
         Dracula — Chapter I
       </p>
 
-      <audio ref={audioRef} onEnded={handleAudioEnd} style={{ display: 'none' }} />
+      <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
+      <audio ref={ambienceRef} loop style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <button
@@ -89,7 +130,7 @@ export default function Home() {
             opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? 'Generating...' : 'Generate Dracula Scene'}
+          {loading ? 'Generating audio drama...' : 'Generate Dracula Scene'}
         </button>
 
         {blocks.length > 0 && !loading && (
@@ -109,6 +150,21 @@ export default function Home() {
           </button>
         )}
       </div>
+
+      {loading && (
+        <div style={{
+          background: '#111',
+          border: '1px solid #333',
+          borderRadius: '10px',
+          padding: '2rem',
+          textAlign: 'center',
+          color: '#888'
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎭</div>
+          <p>Generating voices and ambient sounds...</p>
+          <p style={{ fontSize: '12px', marginTop: '8px' }}>This takes about 30 seconds</p>
+        </div>
+      )}
 
       {blocks && blocks.length > 0 && blocks.map((block, i) => (
         <div
