@@ -9,12 +9,10 @@ export async function POST(request) {
     }
 
     const { default: OpenAI } = await import('openai')
-    
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    })
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-    const response = await client.chat.completions.create({
+    // PASS 1 — Extract basic blocks
+    const pass1 = await client.chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 4000,
       messages: [{
@@ -25,21 +23,8 @@ export async function POST(request) {
 - line: exact text to speak
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
 - emotion: one of [neutral, fearful, terrified, horrified, angry, furious, joyful, sad, grief, tense, anxious, mysterious, curious, disgusted, desperate, relieved, suspicious, confused, determined, resigned, awestruck, lonely]
-- ambience: describe the background sound in detail. Be very specific and cinematic. Examples:
-  "wolves howling far in the distance, barely audible"
-  "wolves howling close and surrounding, loud and terrifying"
-  "panicked breathing, running footsteps on dirt road, wolves snarling inches away"
-  "clock tower bells striking midnight, twelve deep resonant chimes"
-  "horse hooves galloping frantically on rocky road"
-  "complete dead silence, not a sound"
-  Never return "none". If no obvious sound, return a subtle atmospheric sound like "quiet room ambience" or "night insects".
-- ambience_volume: one of [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] — how loud the ambience should be. Distant sounds = 0.1-0.2. Normal = 0.3-0.4. Intense scenes = 0.6-0.9.
-
-- IMPORTANT RULES:
-  1. If wolves are mentioned getting closer across multiple blocks, increase ambience_volume each block
-  2. If someone is running or panicking, ambience must include "panicked breathing and running footsteps"
-  3. If a specific sound is mentioned at a specific moment, split the line at that moment into two blocks
-  4. Match the intensity of ambience to the drama of the scene
+- ambience: describe background sound in detail
+- ambience_volume: number between 0.1 and 0.9
 
 Return ONLY valid JSON. No explanation. No markdown. No backticks.
 Chapter:
@@ -47,11 +32,36 @@ ${chapterText}`
       }]
     })
 
-    const text = response.choices[0].message.content
-    console.log('GPT raw response:', text)
-    
-    const json = JSON.parse(text)
-    return Response.json({ blocks: json })
+    const pass1blocks = JSON.parse(pass1.choices[0].message.content)
+
+    // PASS 2 — Review and fix splits, volumes, ambience
+    const pass2 = await client.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 4000,
+      messages: [{
+        role: 'user',
+        content: `You are a senior audio drama director reviewing a junior director's work. Here are the extracted blocks:
+
+${JSON.stringify(pass1blocks, null, 2)}
+
+Fix the following issues and return a corrected JSON array:
+
+1. SPLITS: If a line mentions a specific sound at a specific moment, split it into two blocks at that exact word. Example: "when the clock strikes midnight, all evil things will have full sway" → Block 1: "when the clock strikes midnight" with ambience "clock tower striking midnight, twelve deep chimes". Block 2: "all evil things will have full sway" with ambience "low horror drone".
+
+2. VOLUME ESCALATION: If wolves or danger is getting closer across multiple blocks, increase ambience_volume each block. Distant = 0.15. Getting closer = 0.3. Surrounding = 0.6. Right next to you = 0.9.
+
+3. PANIC SOUNDS: If someone is running, jumping, or in immediate danger, ambience must be "panicked breathing, running footsteps, wolves snarling close" with volume 0.8.
+
+4. MISSING BLOCKS: Make sure every sentence from the original is represented. Do not skip narrator lines.
+
+5. AMBIENCE ACCURACY: Make sure ambience matches exactly what is happening at that moment in the story.
+
+Return ONLY the corrected valid JSON array. No explanation. No markdown. No backticks.`
+      }]
+    })
+
+    const finalBlocks = JSON.parse(pass2.choices[0].message.content)
+    return Response.json({ blocks: finalBlocks })
 
   } catch (error) {
     console.error('Parse error:', error.message)
