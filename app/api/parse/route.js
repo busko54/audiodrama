@@ -25,6 +25,10 @@ export async function POST(request) {
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
 - emotion: one of [neutral, fearful, terrified, horrified, angry, furious, joyful, sad, grief, tense, anxious, mysterious, curious, disgusted, desperate, relieved, suspicious, confused, determined, resigned, awestruck, lonely]
 - ambience: detect any background sounds that fit the scene naturally. You MUST include sounds explicitly mentioned in the text. If the text says "clock strikes midnight" return "clock striking midnight". If text says "wolves howling" return "wolves howling". If text says "storm raged" return "thunder and rain". If text says "horses" return "horse hooves". Never return "none" if any sound is mentioned in the text.
+- IMPORTANT: If a sound cue happens at a specific moment within a line, split the line into two blocks at that exact point. For example "Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?" should become:
+  Block 1: "Do you not know that to-night, when the clock strikes midnight" with ambience "clock striking midnight"
+  Block 2: "all the evil things in the world will have full sway?" with ambience "low horror drone"
+- Always split lines at the exact moment a sound is mentioned so ambience plays at the right time not at the start of the whole sentence.
 
 Return ONLY valid JSON. No explanation. No markdown. No backticks.
 Chapter:
