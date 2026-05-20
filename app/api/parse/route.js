@@ -18,7 +18,6 @@ export async function POST(request) {
       messages: [{
         role: 'user',
         content: `You are an audio drama director. Read the following chapter and return a JSON array. For each line of dialogue or narration extract:
-
 - speaker: ONLY use these exact names: "narrator", "jonathan harker", "old landlady", "counts driver", "count dracula". If unsure use "narrator".
 - line: exact text to speak
 - tone: one of [normal, whisper, shout, laugh, cry, tremble, commanding, pleading, mocking, breathless, solemn, frantic, cold, warm, sarcastic, ominous, exhausted, excited]
@@ -32,7 +31,9 @@ ${chapterText}`
       }]
     })
 
-    const pass1blocks = JSON.parse(pass1.choices[0].message.content)
+    const pass1text = pass1.choices[0].message.content
+    const pass1clean = pass1text.replace(/```json|```/g, '').trim()
+    const pass1blocks = JSON.parse(pass1clean)
 
     // PASS 2 — Review and fix splits, volumes, ambience
     const pass2 = await client.chat.completions.create({
@@ -47,20 +48,19 @@ ${JSON.stringify(pass1blocks, null, 2)}
 Fix the following issues and return a corrected JSON array:
 
 1. SPLITS: If a line mentions a specific sound at a specific moment, split it into two blocks at that exact word. Example: "when the clock strikes midnight, all evil things will have full sway" → Block 1: "when the clock strikes midnight" with ambience "clock tower striking midnight, twelve deep chimes". Block 2: "all evil things will have full sway" with ambience "low horror drone".
-
 2. VOLUME ESCALATION: If wolves or danger is getting closer across multiple blocks, increase ambience_volume each block. Distant = 0.15. Getting closer = 0.3. Surrounding = 0.6. Right next to you = 0.9.
-
 3. PANIC SOUNDS: If someone is running, jumping, or in immediate danger, ambience must be "panicked breathing, running footsteps, wolves snarling close" with volume 0.8.
-
 4. MISSING BLOCKS: Make sure every sentence from the original is represented. Do not skip narrator lines.
-
 5. AMBIENCE ACCURACY: Make sure ambience matches exactly what is happening at that moment in the story.
 
 Return ONLY the corrected valid JSON array. No explanation. No markdown. No backticks.`
       }]
     })
 
-    const finalBlocks = JSON.parse(pass2.choices[0].message.content)
+    const pass2text = pass2.choices[0].message.content
+    const pass2clean = pass2text.replace(/```json|```/g, '').trim()
+    const finalBlocks = JSON.parse(pass2clean)
+
     return Response.json({ blocks: finalBlocks })
 
   } catch (error) {
