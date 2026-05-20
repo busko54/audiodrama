@@ -20,7 +20,9 @@ export default function Home() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`    })
+        chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`
+      })
+    })
     const parseData = await parseRes.json()
 
     const stitchRes = await fetch('/api/stitch', {
