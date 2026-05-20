@@ -6,6 +6,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
 
@@ -27,27 +28,16 @@ export default function Home() {
     const stitchRes = await fetch('/api/stitch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks: parseData.blocks })
+      body: JSON.stringify({
+        blocks: parseData.blocks,
+        bookId: 'dracula',
+        chapterNumber: 1
+      })
     })
     const stitchData = await stitchRes.json()
 
-    // Generate ambience for each block
-    const blocksWithAmbience = await Promise.all(
-      stitchData.blocks.map(async (block) => {
-        if (!block.ambience || block.ambience === 'none') {
-          return { ...block, ambienceAudio: null }
-        }
-        const ambienceRes = await fetch('/api/ambience', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ambienceText: block.ambience })
-        })
-        const ambienceData = await ambienceRes.json()
-        return { ...block, ambienceAudio: ambienceData.audio || null }
-      })
-    )
-
-    setBlocks(blocksWithAmbience)
+    setFromCache(stitchData.fromCache || false)
+    setBlocks(stitchData.blocks)
     setLoading(false)
   }
 
@@ -69,18 +59,16 @@ export default function Home() {
     if (currentBlock >= 0 && blocks[currentBlock]) {
       const block = blocks[currentBlock]
 
-      // Play voice
       if (block.audio && voiceRef.current) {
         voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
         voiceRef.current.volume = 1.0
         voiceRef.current.play()
       }
 
-      // Play ambience underneath
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = block.ambience_volume || 0.25          
+          ambienceRef.current.volume = block.ambience_volume || 0.25
           ambienceRef.current.loop = true
           ambienceRef.current.play()
         } else {
@@ -108,9 +96,15 @@ export default function Home() {
       <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
         🎭 AudioDrama
       </h1>
-      <p style={{ color: '#888', marginBottom: '2rem' }}>
+      <p style={{ color: '#888', marginBottom: '0.5rem' }}>
         Dracula — Chapter I
       </p>
+
+      {fromCache && (
+        <p style={{ color: '#4CAF50', fontSize: '12px', marginBottom: '1.5rem' }}>
+          ⚡ Served from cache — no credits used
+        </p>
+      )}
 
       <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
       <audio ref={ambienceRef} loop style={{ display: 'none' }} />
