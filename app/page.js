@@ -20,8 +20,7 @@ export default function Home() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-chapterText: `"Must you go? Oh! young Herr, must you go?" She was in such an excited state that she seemed to have lost her grip of what German she knew. When I told her that I must go at once, she went on: "It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?" She then rose and dried her eyes, and taking a crucifix from her neck offered it to me, and said "For your mother's sake," and went out of the room. Then a dog began to howl somewhere in a farmhouse far down the road — a long, agonised wailing, as if from fear. Then far off in the distance, from the mountains on each side of us began a louder and sharper howling — that of wolves. I saw around us a ring of wolves, with white teeth and lolling red tongues. For myself, I felt a sort of paralysis of fear. The driver spoke to them in a tone of imperious command and the wolves fell back. Suddenly I became conscious that the driver was pulling up the horses in the courtyard of a vast ruined castle, from whose tall black windows came no ray of light.`      })
-    })
+chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`    })
     const parseData = await parseRes.json()
 
     const stitchRes = await fetch('/api/stitch', {
