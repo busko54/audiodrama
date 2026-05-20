@@ -12,6 +12,7 @@
   "react": "^18",
   "react-dom": "^18",
   "openai": "^4.47.0",
-  "elevenlabs": "^0.8.0"
+  "elevenlabs": "^0.8.0",
+  "@supabase/supabase-js": "^2.39.0"
 }
 }
