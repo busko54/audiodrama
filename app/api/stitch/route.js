@@ -17,26 +17,26 @@ const voiceMap = {
 }
 
 async function generateAudio(text, voiceId, tone, emotion) {
-  const performancePrompts = {
-    whisper:    `[whispered, barely audible] ${text}`,
-    frantic:    `[frantically, voice breaking with terror] ${text}`,
-    ominous:    `[slow and ominous, each word deliberate] ${text}`,
-    pleading:   `[desperately pleading, voice trembling] ${text}`,
-    tremble:    `[voice trembling uncontrollably] ${text}`,
-    breathless: `[breathless, gasping slightly] ${text}`,
-    commanding: `[cold, commanding, utterly authoritative] ${text}`,
-    solemn:     `[gravely solemn, low and serious] ${text}`,
-    cry:        `[voice breaking, on the verge of tears] ${text}`,
-    shout:      `[shouting urgently] ${text}`,
-    laugh:      `[laughing slightly as they speak] ${text}`,
-    mocking:    `[mockingly, with contempt] ${text}`,
-    cold:       `[ice cold, emotionless] ${text}`,
-    warm:       `[warmly, gently] ${text}`,
-    sarcastic:  `[sarcastically] ${text}`,
-    exhausted:  `[exhausted, barely able to speak] ${text}`,
-    excited:    `[excitedly, barely containing energy] ${text}`,
-    normal:     text,
-  }
+ const performancePrompts = {
+  whisper:    `<whisper>${text}</whisper>`,
+  frantic:    text,
+  ominous:    text,
+  pleading:   text,
+  tremble:    text,
+  breathless: text,
+  commanding: text,
+  solemn:     text,
+  cry:        text,
+  shout:      text,
+  laugh:      text,
+  mocking:    text,
+  cold:       text,
+  warm:       text,
+  sarcastic:  text,
+  exhausted:  text,
+  excited:    text,
+  normal:     text,
+}
 
   const directedText = performancePrompts[tone] || text
 
