@@ -11,18 +11,24 @@ export async function POST(request) {
         const path = await import('path')
         const filePath = path.join(process.cwd(), 'public', 'books', bookId, `chapter-${chapterNumber}.json`)
         
-        if (fs.existsSync(filePath)) {
+        const fileExists = fs.existsSync(filePath)
+        
+        if (fileExists) {
           const fileContent = fs.readFileSync(filePath, 'utf8')
           const blocks = JSON.parse(fileContent)
           console.log('Serving pre-processed JSON:', bookId, chapterNumber)
           return Response.json({ blocks })
         }
       } catch (fileError) {
-        console.log('No pre-processed file found, falling back to GPT')
+        console.log('No pre-processed file found, falling back to GPT:', fileError.message)
       }
     }
 
     // Fall back to GPT for chapters without pre-processed files
+    if (!chapterText) {
+      return Response.json({ error: 'No chapter text provided and no pre-processed file found' }, { status: 400 })
+    }
+
     if (!process.env.OPENAI_API_KEY) {
       return Response.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 })
     }
