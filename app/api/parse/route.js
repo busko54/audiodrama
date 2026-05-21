@@ -5,24 +5,20 @@ export async function POST(request) {
     const { chapterText, bookId, chapterNumber } = await request.json()
 
     // Check for pre-processed JSON file first
-    if (bookId && chapterNumber) {
-      try {
-        const fs = await import('fs')
-        const path = await import('path')
-        const filePath = path.join(process.cwd(), 'public', 'books', bookId, `chapter-${chapterNumber}.json`)
-        
-        const fileExists = fs.existsSync(filePath)
-        
-        if (fileExists) {
-          const fileContent = fs.readFileSync(filePath, 'utf8')
-          const blocks = JSON.parse(fileContent)
-          console.log('Serving pre-processed JSON:', bookId, chapterNumber)
-          return Response.json({ blocks })
-        }
-      } catch (fileError) {
-        console.log('No pre-processed file found, falling back to GPT:', fileError.message)
-      }
+  if (bookId && chapterNumber) {
+  try {
+    const fileUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://audiodrama.vercel.app'}/books/${bookId}/chapter-${chapterNumber}.json`
+    const fileRes = await fetch(fileUrl)
+    
+    if (fileRes.ok) {
+      const blocks = await fileRes.json()
+      console.log('Serving pre-processed JSON:', bookId, chapterNumber)
+      return Response.json({ blocks })
     }
+  } catch (fileError) {
+    console.log('No pre-processed file found, falling back to GPT:', fileError.message)
+  }
+}
 
     // Fall back to GPT for chapters without pre-processed files
     if (!chapterText) {
