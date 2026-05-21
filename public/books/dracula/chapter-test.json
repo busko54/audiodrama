@@ -1,0 +1,42 @@
+[
+  {
+    "speaker": "narrator",
+    "line": "Just before I was leaving, the old lady came up to my room and said in a very hysterical way:",
+    "tone": "normal",
+    "emotion": "anxious",
+    "ambience": "quiet inn room, distant footsteps",
+    "ambience_volume": 0.3
+  },
+  {
+    "speaker": "old landlady",
+    "line": "Must you go? Oh! young Herr, must you go?",
+    "tone": "pleading",
+    "emotion": "desperate",
+    "ambience": "emotional voice, creaking floor",
+    "ambience_volume": 0.5
+  },
+  {
+    "speaker": "old landlady",
+    "line": "It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?",
+    "tone": "tremble",
+    "emotion": "terrified",
+    "ambience": "clock ticking louder, wind outside",
+    "ambience_volume": 0.6
+  },
+  {
+    "speaker": "narrator",
+    "line": "She was in such evident distress that I tried to comfort her, but without effect.",
+    "tone": "normal",
+    "emotion": "anxious",
+    "ambience": "soft sobbing, room echo",
+    "ambience_volume": 0.4
+  },
+  {
+    "speaker": "old landlady",
+    "line": "For your mother's sake.",
+    "tone": "pleading",
+    "emotion": "desperate",
+    "ambience": "beads clinking, footsteps leaving",
+    "ambience_volume": 0.4
+  }
+]
