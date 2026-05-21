@@ -17,14 +17,14 @@ export default function Home() {
     setIsPlaying(false)
 
     const parseRes = await fetch('/api/parse', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    chapterText: `paste chapter text here`,
-    bookId: 'dracula',
-    chapterNumber: 1
-  })
-})
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`,
+        bookId: 'dracula',
+        chapterNumber: 99
+      })
+    })
     const parseData = await parseRes.json()
 
     const stitchRes = await fetch('/api/stitch', {
@@ -33,7 +33,7 @@ export default function Home() {
       body: JSON.stringify({
         blocks: parseData.blocks,
         bookId: 'dracula',
-        chapterNumber: 1
+        chapterNumber: 99
       })
     })
     const stitchData = await stitchRes.json()
@@ -99,7 +99,7 @@ export default function Home() {
         🎭 AudioDrama
       </h1>
       <p style={{ color: '#888', marginBottom: '0.5rem' }}>
-        Dracula — Chapter I
+        Dracula — Test Scene
       </p>
 
       {fromCache && (
@@ -126,7 +126,7 @@ export default function Home() {
             opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? 'Generating audio drama...' : 'Generate Dracula Scene'}
+          {loading ? 'Generating...' : 'Test One Line'}
         </button>
 
         {blocks.length > 0 && !loading && (
@@ -142,7 +142,7 @@ export default function Home() {
               cursor: 'pointer'
             }}
           >
-            {isPlaying ? '⏸ Pause' : '▶ Play All'}
+            {isPlaying ? '⏸ Pause' : '▶ Play'}
           </button>
         )}
       </div>
@@ -157,8 +157,7 @@ export default function Home() {
           color: '#888'
         }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎭</div>
-          <p>Generating voices and ambient sounds...</p>
-          <p style={{ fontSize: '12px', marginTop: '8px' }}>This takes about 30 seconds</p>
+          <p>Generating...</p>
         </div>
       )}
 
@@ -183,9 +182,7 @@ export default function Home() {
             flexWrap: 'wrap',
             alignItems: 'center'
           }}>
-            {currentBlock === i && (
-              <span style={{ fontSize: '16px' }}>🔊</span>
-            )}
+            {currentBlock === i && <span style={{ fontSize: '16px' }}>🔊</span>}
             <span style={{
               background: '#8B0000',
               color: '#fff',
