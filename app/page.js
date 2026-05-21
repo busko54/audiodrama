@@ -17,12 +17,14 @@ export default function Home() {
     setIsPlaying(false)
 
     const parseRes = await fetch('/api/parse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`
-      })
-    })
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    chapterText: `paste chapter text here`,
+    bookId: 'dracula',
+    chapterNumber: 1
+  })
+})
     const parseData = await parseRes.json()
 
     const stitchRes = await fetch('/api/stitch', {
