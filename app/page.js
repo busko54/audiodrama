@@ -19,11 +19,11 @@ export default function Home() {
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-  chapterText: `Just before I was leaving, the old lady came up to my room and said in a very hysterical way: "Must you go? Oh! young Herr, must you go?" When I told her that I must go at once, she went on: "It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?"`,
-  bookId: 'dracula',
-  chapterNumber: 99
-})
+      body: JSON.stringify({
+        chapterText: '',
+        bookId: 'dracula',
+        chapterNumber: 'test'
+      })
     })
     const parseData = await parseRes.json()
 
@@ -33,7 +33,7 @@ export default function Home() {
       body: JSON.stringify({
         blocks: parseData.blocks,
         bookId: 'dracula',
-        chapterNumber: 99
+        chapterNumber: 'test'
       })
     })
     const stitchData = await stitchRes.json()
@@ -99,7 +99,7 @@ export default function Home() {
         🎭 AudioDrama
       </h1>
       <p style={{ color: '#888', marginBottom: '0.5rem' }}>
-        Dracula — Test Scene
+        Dracula — Chapter I
       </p>
 
       {fromCache && (
@@ -126,7 +126,7 @@ export default function Home() {
             opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? 'Generating...' : 'Test One Line'}
+          {loading ? 'Generating...' : 'Play Dracula Scene'}
         </button>
 
         {blocks.length > 0 && !loading && (
@@ -142,7 +142,7 @@ export default function Home() {
               cursor: 'pointer'
             }}
           >
-            {isPlaying ? '⏸ Pause' : '▶ Play'}
+            {isPlaying ? '⏸ Pause' : '▶ Play All'}
           </button>
         )}
       </div>
@@ -157,7 +157,8 @@ export default function Home() {
           color: '#888'
         }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎭</div>
-          <p>Generating...</p>
+          <p>Generating voices and ambient sounds...</p>
+          <p style={{ fontSize: '12px', marginTop: '8px' }}>This takes about 30 seconds</p>
         </div>
       )}
 
