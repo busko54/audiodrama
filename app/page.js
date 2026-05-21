@@ -20,8 +20,7 @@ export default function Home() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chapterText: `It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?`,
-        bookId: 'dracula',
+chapterText: `Just before I was leaving, the old lady came up to my room and said in a very hysterical way: "Must you go? Oh! young Herr, must you go?" When I told her that I must go at once, she went on: "It is the eve of St. George's Day. Do you not know that to-night, when the clock strikes midnight, all the evil things in the world will have full sway?"`        bookId: 'dracula',
         chapterNumber: 99
       })
     })
