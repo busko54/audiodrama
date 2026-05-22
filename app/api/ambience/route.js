@@ -1,74 +1,108 @@
 export const dynamic = 'force-dynamic'
 
-// Make ambience descriptions more specific for better generation
-function enhanceAmbiencePrompt(text) {
-  const enhancements = {
-    'clock': 'loud clock tower bell striking midnight, twelve deep resonant chimes, echoing',
-    'midnight': 'clock tower bells striking midnight, twelve deep resonant chimes echoing in silence',
-    'wolves': 'pack of wolves howling in the dark night, distant and eerie, getting closer',
-    'wind': 'cold mountain wind howling through pine trees and rocks at night',
-    'thunder': 'distant thunder rumbling over mountains, low and ominous',
-    'horses': 'horse hooves galloping fast on dirt road, carriage wheels rattling',
-    'crowd': 'crowd of people murmuring and whispering nervously',
-    'silence': 'complete eerie silence, deep ambient quiet',
-    'snow': 'blizzard wind with snow, cold winter storm howling',
-    'castle': 'dark castle ambient, wind through stone corridors, eerie silence',
-    'dog': 'dog howling mournfully in the night, long agonised wail',
-    'fire': 'crackling fire burning, wood popping',
-    'rain': 'heavy rain falling, storm outside',
-    'train': 'old steam train moving, wheels on tracks, steam hissing',
-  }
+const keywordMap = {
+  'clock': 'clock chime midnight bells',
+  'midnight': 'clock striking midnight chime',
+  'wolves': 'wolves howling night forest',
+  'wolf': 'wolf howling night',
+  'wind': 'wind howling mountain night',
+  'thunder': 'thunder storm rumble',
+  'horses': 'horse hooves galloping',
+  'horse': 'horse hooves carriage',
+  'crowd': 'crowd murmur people talking',
+  'crowd': 'crowd murmur people talking',
+  'silence': null,
+  'dog': 'dog howling night',
+  'fire': 'fire crackling wood burning',
+  'rain': 'rain falling storm',
+  'train': 'steam train moving tracks',
+  'castle': 'wind dark castle eerie',
+  'snow': 'blizzard wind snow',
+  'creaking': 'wood floor creaking',
+  'footsteps': 'footsteps wooden floor',
+  'door': 'door creaking opening',
+  'sobbing': 'woman crying sobbing',
+  'church': 'church bells distant',
+  'inn': 'tavern inn ambient quiet',
+  'carriage': 'horse carriage moving',
+  'whip': 'whip crack horse',
+  'screaming': 'crowd screaming panic',
+}
 
-  // Check if any keyword matches
-  const lower = text.toLowerCase()
-  for (const [keyword, enhanced] of Object.entries(enhancements)) {
+function getSearchQuery(ambienceText) {
+  if (!ambienceText || ambienceText === 'none') return null
+  
+  const lower = ambienceText.toLowerCase()
+  
+  for (const [keyword, query] of Object.entries(keywordMap)) {
     if (lower.includes(keyword)) {
-      return enhanced
+      return query
     }
   }
-
-  // If no match, return original with extra context
-  return `${text}, atmospheric sound effect, cinematic quality`
+  
+  // If no keyword matches, use the ambience text directly
+  return ambienceText
 }
 
 export async function POST(request) {
   try {
     const { ambienceText } = await request.json()
 
-    if (!ambienceText || ambienceText === 'none') {
+    const searchQuery = getSearchQuery(ambienceText)
+    
+    if (!searchQuery) {
       return Response.json({ audio: null })
     }
 
-    const enhancedPrompt = enhanceAmbiencePrompt(ambienceText)
-    console.log('Ambience prompt:', enhancedPrompt)
-
-    const response = await fetch(
-      'https://api.elevenlabs.io/v1/sound-generation',
+    // Search Freesound for the best matching sound
+    const searchRes = await fetch(
+      `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(searchQuery)}&fields=id,name,previews,duration&filter=duration:[1+TO+30]&sort=rating_desc&page_size=5`,
       {
-        method: 'POST',
         headers: {
-          'xi-api-key': process.env.ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: enhancedPrompt,
-          duration_seconds: 10,
-          prompt_influence: 0.5
-        })
+          'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
+        }
       }
     )
 
-    if (!response.ok) {
-      const error = await response.text()
-      return Response.json({ error }, { status: 500 })
+    if (!searchRes.ok) {
+      console.error('Freesound search failed:', await searchRes.text())
+      return Response.json({ audio: null })
     }
 
-    const audioBuffer = await response.arrayBuffer()
+    const searchData = await searchRes.json()
+    
+    if (!searchData.results || searchData.results.length === 0) {
+      return Response.json({ audio: null })
+    }
+
+    // Get the first result's preview URL
+    const sound = searchData.results[0]
+    const previewUrl = sound.previews['preview-hq-mp3'] || sound.previews['preview-lq-mp3']
+
+    if (!previewUrl) {
+      return Response.json({ audio: null })
+    }
+
+    // Download the audio file
+    const audioRes = await fetch(previewUrl, {
+      headers: {
+        'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
+      }
+    })
+
+    if (!audioRes.ok) {
+      return Response.json({ audio: null })
+    }
+
+    const audioBuffer = await audioRes.arrayBuffer()
     const base64Audio = Buffer.from(audioBuffer).toString('base64')
+
+    console.log('Freesound audio fetched:', sound.name, 'for query:', searchQuery)
 
     return Response.json({ audio: base64Audio })
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 })
+    console.error('Ambience error:', error.message)
+    return Response.json({ audio: null })
   }
 }
