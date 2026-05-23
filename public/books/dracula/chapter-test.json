@@ -5,6 +5,10 @@
     "tone": "normal",
     "emotion": "anxious",
     "ambience": "footsteps approaching on wooden floor",
-    "ambience_volume": 0.8
+    "ambience_volume": 0.8,
+    "sfx_cue": {
+      "trigger_word": "came up to my room",
+      "effect": "footsteps approaching on wooden floor"
+    }
   }
 ]
