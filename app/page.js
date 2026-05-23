@@ -58,29 +58,62 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (currentBlock >= 0 && blocks[currentBlock]) {
-      const block = blocks[currentBlock]
+  if (currentBlock >= 0 && blocks[currentBlock]) {
+    const block = blocks[currentBlock]
 
-      if (block.audio && voiceRef.current) {
-        voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-        voiceRef.current.volume = 1.0
-        voiceRef.current.play()
-      }
+    if (block.audio && voiceRef.current) {
+      voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
+      voiceRef.current.volume = 1.0
+      voiceRef.current.play()
 
-      if (ambienceRef.current) {
-        if (block.ambienceAudio) {
+      // Word-level timing estimation
+      if (block.sfx_cue && block.ambienceAudio && ambienceRef.current) {
+        const words = block.line.split(' ')
+        const triggerWords = block.sfx_cue.trigger_word.split(' ')
+        const triggerIndex = words.findIndex((w, i) => 
+          words.slice(i, i + triggerWords.length).join(' ').toLowerCase() === 
+          block.sfx_cue.trigger_word.toLowerCase()
+        )
+        
+        if (triggerIndex > 0) {
+          // Estimate delay: words before trigger / 130 wpm * 60 seconds * 1000ms
+          const delayMs = (triggerIndex / 130) * 60 * 1000
+          
+          // Start ambience silent, then fade in at trigger point
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)          
+          ambienceRef.current.volume = 0
           ambienceRef.current.loop = true
           ambienceRef.current.play()
+          
+          setTimeout(() => {
+            if (ambienceRef.current) {
+              ambienceRef.current.volume = Math.min(block.ambience_volume || 0.5, 1.0)
+            }
+          }, delayMs)
         } else {
-          ambienceRef.current.pause()
-          ambienceRef.current.src = ''
+          // No trigger word found, play from start
+          ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
+          ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
+          ambienceRef.current.loop = true
+          ambienceRef.current.play()
         }
+        return
       }
     }
-  }, [currentBlock, blocks])
 
+    if (ambienceRef.current) {
+      if (block.ambienceAudio) {
+        ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
+        ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
+        ambienceRef.current.loop = true
+        ambienceRef.current.play()
+      } else {
+        ambienceRef.current.pause()
+        ambienceRef.current.src = ''
+      }
+    }
+  }
+}, [currentBlock, blocks])
   const handleVoiceEnd = () => {
     playFrom(currentBlock + 1)
   }
