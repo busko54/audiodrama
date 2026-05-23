@@ -10,7 +10,6 @@ const keywordMap = {
   'horses': 'horse hooves galloping',
   'horse': 'horse hooves carriage',
   'crowd': 'crowd murmur people talking',
-  'crowd': 'crowd murmur people talking',
   'silence': null,
   'dog': 'dog howling night',
   'fire': 'fire crackling wood burning',
@@ -19,7 +18,7 @@ const keywordMap = {
   'castle': 'wind dark castle eerie',
   'snow': 'blizzard wind snow',
   'creaking': 'wood floor creaking',
-  'footsteps': 'footsteps wooden floor',
+  'footsteps': 'footsteps wooden floor indoor',
   'door': 'door creaking opening',
   'sobbing': 'woman crying sobbing',
   'church': 'church bells distant',
@@ -40,21 +39,23 @@ function getSearchQuery(ambienceText) {
     }
   }
   
-  // If no keyword matches, use the ambience text directly
   return ambienceText
 }
 
 export async function POST(request) {
   try {
     const { ambienceText } = await request.json()
-
+    
+    console.log('Ambience request:', ambienceText)
+    
     const searchQuery = getSearchQuery(ambienceText)
+    
+    console.log('Search query:', searchQuery)
     
     if (!searchQuery) {
       return Response.json({ audio: null })
     }
 
-    // Search Freesound for the best matching sound
     const searchRes = await fetch(
       `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(searchQuery)}&fields=id,name,previews,duration&filter=duration:[1+TO+30]&sort=rating_desc&page_size=5`,
       {
@@ -65,25 +66,31 @@ export async function POST(request) {
     )
 
     if (!searchRes.ok) {
-      console.error('Freesound search failed:', await searchRes.text())
+      const errText = await searchRes.text()
+      console.error('Freesound search failed:', errText)
       return Response.json({ audio: null })
     }
 
     const searchData = await searchRes.json()
     
+    console.log('Freesound results count:', searchData.results?.length)
+    console.log('Freesound first result:', searchData.results?.[0]?.name)
+
     if (!searchData.results || searchData.results.length === 0) {
+      console.log('No results found for query:', searchQuery)
       return Response.json({ audio: null })
     }
 
-    // Get the first result's preview URL
     const sound = searchData.results[0]
     const previewUrl = sound.previews['preview-hq-mp3'] || sound.previews['preview-lq-mp3']
 
+    console.log('Preview URL:', previewUrl)
+
     if (!previewUrl) {
+      console.log('No preview URL found')
       return Response.json({ audio: null })
     }
 
-    // Download the audio file
     const audioRes = await fetch(previewUrl, {
       headers: {
         'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
@@ -91,13 +98,14 @@ export async function POST(request) {
     })
 
     if (!audioRes.ok) {
+      console.error('Audio download failed:', audioRes.status)
       return Response.json({ audio: null })
     }
 
     const audioBuffer = await audioRes.arrayBuffer()
     const base64Audio = Buffer.from(audioBuffer).toString('base64')
 
-    console.log('Freesound audio fetched:', sound.name, 'for query:', searchQuery)
+    console.log('Freesound audio fetched successfully:', sound.name, 'for query:', searchQuery)
 
     return Response.json({ audio: base64Audio })
 
