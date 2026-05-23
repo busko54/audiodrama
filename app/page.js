@@ -70,8 +70,7 @@ export default function Home() {
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = (block.ambience_volume || 0.25) * 2
-          ambienceRef.current.loop = true
+ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)          ambienceRef.current.loop = true
           ambienceRef.current.play()
         } else {
           ambienceRef.current.pause()
