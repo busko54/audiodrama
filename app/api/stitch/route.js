@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getCachedChapter, cacheChapter, uploadAudio } from '@/lib/cache'
+import { getCachedChapter, cacheChapter } from '@/lib/cache'
 
 const voiceMap = {
   'narrator': 'DEvZo8VdnUy6pZ4CSwUB',
@@ -17,26 +17,26 @@ const voiceMap = {
 }
 
 async function generateAudio(text, voiceId, tone, emotion) {
- const performancePrompts = {
-  whisper:    `<whisper>${text}</whisper>`,
-  frantic:    text,
-  ominous:    text,
-  pleading:   text,
-  tremble:    text,
-  breathless: text,
-  commanding: text,
-  solemn:     text,
-  cry:        text,
-  shout:      text,
-  laugh:      text,
-  mocking:    text,
-  cold:       text,
-  warm:       text,
-  sarcastic:  text,
-  exhausted:  text,
-  excited:    text,
-  normal:     text,
-}
+  const performancePrompts = {
+    whisper:    `<whisper>${text}</whisper>`,
+    frantic:    text,
+    ominous:    text,
+    pleading:   text,
+    tremble:    text,
+    breathless: text,
+    commanding: text,
+    solemn:     text,
+    cry:        text,
+    shout:      text,
+    laugh:      text,
+    mocking:    text,
+    cold:       text,
+    warm:       text,
+    sarcastic:  text,
+    exhausted:  text,
+    excited:    text,
+    normal:     text,
+  }
 
   const directedText = performancePrompts[tone] || text
 
@@ -70,59 +70,29 @@ async function generateAudio(text, voiceId, tone, emotion) {
 async function generateAmbience(ambienceText) {
   if (!ambienceText || ambienceText === 'none') return null
 
-  const enhancements = {
-    'clock': 'clock tower bells striking midnight, twelve deep resonant chimes echoing',
-    'midnight': 'clock tower bells striking midnight, twelve deep resonant chimes',
-    'wolves': 'pack of wolves howling in the dark night, eerie and terrifying',
-    'wind': 'cold mountain wind howling through pine trees and rocks at night',
-    'thunder': 'distant thunder rumbling over mountains, low and ominous',
-    'horses': 'horse hooves galloping fast on dirt road, carriage wheels rattling',
-    'crowd': 'crowd of people murmuring and whispering nervously',
-    'silence': 'complete eerie silence, deep ambient quiet',
-    'snow': 'blizzard wind with snow, cold winter storm howling',
-    'castle': 'dark castle ambient, wind through stone corridors',
-    'dog': 'dog howling mournfully in the night, long agonised wail',
-    'fire': 'crackling fire burning, wood popping',
-    'rain': 'heavy rain falling, storm outside',
-    'panic': 'panicked breathing, running footsteps, wolves snarling close',
-  }
-
-  const lower = ambienceText.toLowerCase()
-  let enhancedPrompt = ambienceText
-  for (const [keyword, enhanced] of Object.entries(enhancements)) {
-    if (lower.includes(keyword)) {
-      enhancedPrompt = enhanced
-      break
-    }
-  }
-
-  const response = await fetch(
-    'https://api.elevenlabs.io/v1/sound-generation',
-    {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://audiodrama.vercel.app'
+    const response = await fetch(`${baseUrl}/api/ambience`, {
       method: 'POST',
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: enhancedPrompt,
-        duration_seconds: 10,
-        prompt_influence: 0.5
-      })
-    }
-  )
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ambienceText })
+    })
 
-  if (!response.ok) return null
+    if (!response.ok) return null
 
-  const audioBuffer = await response.arrayBuffer()
-  return Buffer.from(audioBuffer).toString('base64')
+    const data = await response.json()
+    return data.audio || null
+
+  } catch (error) {
+    console.error('Ambience fetch error:', error.message)
+    return null
+  }
 }
 
 export async function POST(request) {
   try {
     const { blocks, bookId, chapterNumber } = await request.json()
 
-    // Check cache first
     if (bookId && chapterNumber) {
       const cached = await getCachedChapter(bookId, chapterNumber)
       if (cached) {
@@ -131,7 +101,6 @@ export async function POST(request) {
       }
     }
 
-    // Not cached — generate everything
     const results = []
 
     for (const block of blocks) {
@@ -155,7 +124,6 @@ export async function POST(request) {
       })
     }
 
-    // Cache the results
     if (bookId && chapterNumber) {
       await cacheChapter(bookId, chapterNumber, results, '')
       console.log('Cached:', bookId, chapterNumber)
