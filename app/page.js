@@ -21,8 +21,8 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chapterText: '',
-        bookId: 'dracula',
-        chapterNumber: 'test'
+        bookId: 'pride-and-prejudice',
+        chapterNumber: 1
       })
     })
     const parseData = await parseRes.json()
@@ -32,8 +32,8 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         blocks: parseData.blocks,
-        bookId: 'dracula',
-        chapterNumber: 'test'
+        bookId: 'pride-and-prejudice',
+        chapterNumber: 1
       })
     })
     const stitchData = await stitchRes.json()
@@ -58,62 +58,29 @@ export default function Home() {
   }
 
   useEffect(() => {
-  if (currentBlock >= 0 && blocks[currentBlock]) {
-    const block = blocks[currentBlock]
+    if (currentBlock >= 0 && blocks[currentBlock]) {
+      const block = blocks[currentBlock]
 
-    if (block.audio && voiceRef.current) {
-      voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-      voiceRef.current.volume = 1.0
-      voiceRef.current.play()
+      if (block.audio && voiceRef.current) {
+        voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
+        voiceRef.current.volume = 1.0
+        voiceRef.current.play()
+      }
 
-      // Word-level timing estimation
-      if (block.sfx_cue && block.ambienceAudio && ambienceRef.current) {
-        const words = block.line.split(' ')
-        const triggerWords = block.sfx_cue.trigger_word.split(' ')
-        const triggerIndex = words.findIndex((w, i) => 
-          words.slice(i, i + triggerWords.length).join(' ').toLowerCase() === 
-          block.sfx_cue.trigger_word.toLowerCase()
-        )
-        
-        if (triggerIndex > 0) {
-          // Estimate delay: words before trigger / 130 wpm * 60 seconds * 1000ms
-          const delayMs = (triggerIndex / 130) * 60 * 1000
-          
-          // Start ambience silent, then fade in at trigger point
-          ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = 0
-          ambienceRef.current.loop = true
-          ambienceRef.current.play()
-          
-          setTimeout(() => {
-            if (ambienceRef.current) {
-              ambienceRef.current.volume = Math.min(block.ambience_volume || 0.5, 1.0)
-            }
-          }, delayMs)
-        } else {
-          // No trigger word found, play from start
+      if (ambienceRef.current) {
+        if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
           ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
           ambienceRef.current.loop = true
           ambienceRef.current.play()
+        } else {
+          ambienceRef.current.pause()
+          ambienceRef.current.src = ''
         }
-        return
       }
     }
+  }, [currentBlock, blocks])
 
-    if (ambienceRef.current) {
-      if (block.ambienceAudio) {
-        ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-        ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
-        ambienceRef.current.loop = true
-        ambienceRef.current.play()
-      } else {
-        ambienceRef.current.pause()
-        ambienceRef.current.src = ''
-      }
-    }
-  }
-}, [currentBlock, blocks])
   const handleVoiceEnd = () => {
     playFrom(currentBlock + 1)
   }
@@ -132,7 +99,7 @@ export default function Home() {
         🎭 AudioDrama
       </h1>
       <p style={{ color: '#888', marginBottom: '0.5rem' }}>
-        Dracula — Chapter I
+        Pride and Prejudice — Chapter I
       </p>
 
       {fromCache && (
@@ -159,7 +126,7 @@ export default function Home() {
             opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? 'Generating...' : 'Play Dracula Scene'}
+          {loading ? 'Generating...' : 'Play Pride and Prejudice'}
         </button>
 
         {blocks.length > 0 && !loading && (
