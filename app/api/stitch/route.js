@@ -14,6 +14,8 @@ const voiceMap = {
   'driver': 'SJxWsMKCCRpKoTtslZWp',
   "count's driver": 'SJxWsMKCCRpKoTtslZWp',
   'count dracula': 'SJxWsMKCCRpKoTtslZWp',
+  'mrs bennet': 'uPfISICOmessSVoItPEY',
+  'mr bennet': 'aZgwaz5nPkvcODbZNhwr',
 }
 
 async function generateAudio(text, voiceId, tone, emotion) {
