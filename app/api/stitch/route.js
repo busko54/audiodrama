@@ -16,6 +16,7 @@ const voiceMap = {
   'count dracula': 'SJxWsMKCCRpKoTtslZWp',
   'mrs bennet': 'uPfISICOmessSVoItPEY',
   'mr bennet': 'aZgwaz5nPkvcODbZNhwr',
+  'pp_narrator': 'ELIjLe2oDKEQ7K9QQmd4',
 }
 
 async function generateAudio(text, voiceId, tone, emotion) {
