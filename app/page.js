@@ -69,11 +69,16 @@ export default function Home() {
 
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
+          console.log('Ambience audio length:', block.ambienceAudio?.length)
+          console.log('Ambience volume:', block.ambience_volume)
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
           ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
           ambienceRef.current.loop = true
           ambienceRef.current.play()
+            .then(() => console.log('Ambience playing successfully'))
+            .catch(err => console.error('Ambience play error:', err))
         } else {
+          console.log('No ambience audio for this block')
           ambienceRef.current.pause()
           ambienceRef.current.src = ''
         }
