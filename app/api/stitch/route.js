@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getCachedChapter, cacheChapter } from '@/lib/cache'
+import { getCachedBlock, cacheBlock } from '@/lib/cache'
 
 const voiceMap = {
   'narrator': 'DEvZo8VdnUy6pZ4CSwUB',
@@ -96,27 +96,32 @@ export async function POST(request) {
   try {
     const { blocks, bookId, chapterNumber } = await request.json()
 
-    if (bookId && chapterNumber) {
-      const cached = await getCachedChapter(bookId, chapterNumber)
-      if (cached) {
-        console.log('Serving from cache:', bookId, chapterNumber)
-        return Response.json({ blocks: cached.blocks, fromCache: true })
-      }
-    }
-
     const results = []
 
-    for (const block of blocks) {
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i]
+
+      // Check block-level cache first
+      if (bookId && chapterNumber) {
+        const cached = await getCachedBlock(bookId, chapterNumber, i)
+        if (cached) {
+          console.log(`Block ${i} served from cache`)
+          results.push(cached)
+          continue
+        }
+      }
+
+      // Not cached — generate
       const speakerKey = block.speaker.toLowerCase().trim()
       const voiceId = voiceMap[speakerKey] || voiceMap['narrator']
-      
+
       const [audio, ambienceAudio, ambience2Audio] = await Promise.all([
         generateAudio(block.line, voiceId, block.tone, block.emotion),
         generateAmbience(block.ambience),
         block.ambience2 ? generateAmbience(block.ambience2) : Promise.resolve(null)
       ])
-      
-      results.push({
+
+      const result = {
         speaker: block.speaker,
         line: block.line,
         tone: block.tone,
@@ -125,15 +130,18 @@ export async function POST(request) {
         ambience_volume: block.ambience_volume || 0.25,
         ambience2: block.ambience2 || null,
         ambience2_volume: block.ambience2_volume || 0.3,
-        audio: audio,
-        ambienceAudio: ambienceAudio,
-        ambience2Audio: ambience2Audio
-      })
-    }
+        audio,
+        ambienceAudio,
+        ambience2Audio
+      }
 
-    if (bookId && chapterNumber) {
-      await cacheChapter(bookId, chapterNumber, results, '')
-      console.log('Cached:', bookId, chapterNumber)
+      // Cache the block
+      if (bookId && chapterNumber) {
+        await cacheBlock(bookId, chapterNumber, i, result)
+        console.log(`Block ${i} cached`)
+      }
+
+      results.push(result)
     }
 
     return Response.json({ blocks: results, fromCache: false })
