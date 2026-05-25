@@ -10,7 +10,7 @@ export default function Home() {
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
-  
+
   const runFullTest = async () => {
     setLoading(true)
     setBlocks([])
@@ -52,6 +52,10 @@ export default function Home() {
         ambienceRef.current.pause()
         ambienceRef.current.src = ''
       }
+      if (ambience2Ref.current) {
+        ambience2Ref.current.pause()
+        ambience2Ref.current.src = ''
+      }
       return
     }
     setCurrentBlock(index)
@@ -70,18 +74,27 @@ export default function Home() {
 
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
-          console.log('Ambience audio length:', block.ambienceAudio?.length)
-          console.log('Ambience volume:', block.ambience_volume)
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
           ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
           ambienceRef.current.loop = true
           ambienceRef.current.play()
-            .then(() => console.log('Ambience playing successfully'))
             .catch(err => console.error('Ambience play error:', err))
         } else {
-          console.log('No ambience audio for this block')
           ambienceRef.current.pause()
           ambienceRef.current.src = ''
+        }
+      }
+
+      if (ambience2Ref.current) {
+        if (block.ambience2Audio) {
+          ambience2Ref.current.src = `data:audio/mpeg;base64,${block.ambience2Audio}`
+          ambience2Ref.current.volume = Math.min(block.ambience2_volume || 0.3, 1.0)
+          ambience2Ref.current.loop = true
+          ambience2Ref.current.play()
+            .catch(err => console.error('Ambience2 play error:', err))
+        } else {
+          ambience2Ref.current.pause()
+          ambience2Ref.current.src = ''
         }
       }
     }
@@ -115,9 +128,9 @@ export default function Home() {
       )}
 
       <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
-<audio ref={ambienceRef} loop style={{ display: 'none' }} />
-<audio ref={ambience2Ref} loop style={{ display: 'none' }} />
-        
+      <audio ref={ambienceRef} loop style={{ display: 'none' }} />
+      <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <button
           onClick={runFullTest}
@@ -231,6 +244,18 @@ export default function Home() {
                 fontFamily: 'monospace'
               }}>
                 🎵 {block.ambience}
+              </span>
+            )}
+            {block.ambience2 && (
+              <span style={{
+                background: '#0d2d1a',
+                color: '#4CAF50',
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontFamily: 'monospace'
+              }}>
+                🎵 {block.ambience2}
               </span>
             )}
           </div>
