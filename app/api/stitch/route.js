@@ -110,9 +110,10 @@ export async function POST(request) {
       const speakerKey = block.speaker.toLowerCase().trim()
       const voiceId = voiceMap[speakerKey] || voiceMap['narrator']
       
-      const [audio, ambienceAudio] = await Promise.all([
+      const [audio, ambienceAudio, ambience2Audio] = await Promise.all([
         generateAudio(block.line, voiceId, block.tone, block.emotion),
-        generateAmbience(block.ambience)
+        generateAmbience(block.ambience),
+        block.ambience2 ? generateAmbience(block.ambience2) : Promise.resolve(null)
       ])
       
       results.push({
@@ -122,8 +123,11 @@ export async function POST(request) {
         emotion: block.emotion,
         ambience: block.ambience,
         ambience_volume: block.ambience_volume || 0.25,
+        ambience2: block.ambience2 || null,
+        ambience2_volume: block.ambience2_volume || 0.3,
         audio: audio,
-        ambienceAudio: ambienceAudio
+        ambienceAudio: ambienceAudio,
+        ambience2Audio: ambience2Audio
       })
     }
 
