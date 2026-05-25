@@ -4,7 +4,9 @@
     "line": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
     "tone": "solemn",
     "emotion": "neutral",
-    "ambience": "soft fire crackling in a quiet English drawing room, faint birds chirping outside",
-    "ambience_volume": 0.8
+    "ambience": "fire crackling wood burning",
+    "ambience2": "birds chirping outside window morning",
+    "ambience_volume": 0.7,
+    "ambience2_volume": 0.5
   }
 ]
