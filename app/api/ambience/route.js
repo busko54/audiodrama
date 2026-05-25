@@ -26,15 +26,18 @@ const keywordMap = {
   'carriage': 'horse carriage moving',
   'whip': 'whip crack horse',
   'screaming': 'crowd screaming panic',
+  'birds': 'birds chirping outside morning nature',
+  'chirping': 'birds chirping nature morning',
 }
 
 function getSearchQuery(ambienceText) {
   if (!ambienceText || ambienceText === 'none') return null
   
   const lower = ambienceText.toLowerCase()
+  const words = lower.split(/\s+/)
   
   for (const [keyword, query] of Object.entries(keywordMap)) {
-    if (lower.includes(keyword)) {
+    if (words.includes(keyword)) {
       return query
     }
   }
