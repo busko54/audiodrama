@@ -26,8 +26,8 @@ const keywordMap = {
   'carriage': 'horse carriage moving',
   'whip': 'whip crack horse',
   'screaming': 'crowd screaming panic',
-  'birds': 'birds chirping outside morning nature',
-  'chirping': 'birds chirping nature morning',
+  'birds': 'loud birds chirping singing forest',
+   'chirping': 'loud birds chirping singing forest',
 }
 
 function getSearchQuery(ambienceText) {
