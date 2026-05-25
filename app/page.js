@@ -9,7 +9,8 @@ export default function Home() {
   const [fromCache, setFromCache] = useState(false)
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
-
+  const ambience2Ref = useRef(null)
+  
   const runFullTest = async () => {
     setLoading(true)
     setBlocks([])
