@@ -115,8 +115,9 @@ export default function Home() {
       )}
 
       <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
-      <audio ref={ambienceRef} loop style={{ display: 'none' }} />
-
+<audio ref={ambienceRef} loop style={{ display: 'none' }} />
+<audio ref={ambience2Ref} loop style={{ display: 'none' }} />
+        
       <div style={{ display: 'flex', gap: '12px', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <button
           onClick={runFullTest}
