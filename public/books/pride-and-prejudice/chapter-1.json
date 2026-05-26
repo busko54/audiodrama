@@ -1,12 +1,17 @@
-[
-  {
-    "speaker": "pp_narrator",
-    "line": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
-    "tone": "solemn",
-    "emotion": "neutral",
-    "ambience": "birds chirping singing loudly",
-    "ambience2": "fire crackling wood burning",
-    "ambience_volume": 0.9,
-    "ambience2_volume": 0.9
-  }
-]
+{
+  "setting": "English countryside drawing room, daytime, refined and quiet",
+  "blocks": [
+    {
+      "speaker": "pp_narrator",
+      "line": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+      "tone": "solemn",
+      "emotion": "neutral"
+    },
+    {
+      "speaker": "pp_narrator",
+      "line": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.",
+      "tone": "sarcastic",
+      "emotion": "amused"
+    }
+  ]
+}
