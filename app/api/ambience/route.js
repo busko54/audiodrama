@@ -28,11 +28,12 @@ async function pickAmbienceKeys(setting, line) {
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 50,
+      max_tokens: 100,
       messages: [
         {
           role: 'system',
-content: `You are an audio drama sound designer. Pick 1 or 2 background ambient sounds that fit the SETTING, not the specific words in the line. The setting is the most important factor. Only pick from this exact list: ${soundKeys}. If none of the sounds are a good fit, return {"noMatch": true, "suggestion": "describe the ideal sound here"} instead. Otherwise return ONLY a JSON array of keys. Example: ["fireplace", "crowd murmuring"]`        },
+          content: `You are an audio drama sound designer. Pick 1 or 2 background ambient sounds that fit the SETTING, not the specific words in the line. The setting is the most important factor. Only pick from this exact list: ${soundKeys}. If none of the sounds are a good fit, return a JSON object like {"noMatch": true, "suggestion": "describe the ideal sound here"}. Otherwise return ONLY a JSON array of keys. Example: ["fireplace", "crowd murmuring"]`
+        },
         {
           role: 'user',
           content: `Setting: ${setting}\nLine: ${line}`
@@ -45,10 +46,14 @@ content: `You are an audio drama sound designer. Pick 1 or 2 background ambient 
   const text = data.choices[0].message.content.trim()
 
   try {
-    const keys = JSON.parse(text)
-    return keys.filter(k => soundMap[k])
+    const parsed = JSON.parse(text)
+    if (parsed.noMatch) {
+      return { noMatch: true, suggestion: parsed.suggestion }
+    }
+    const keys = parsed.filter(k => soundMap[k])
+    return { noMatch: false, keys }
   } catch {
-    return []
+    return { noMatch: false, keys: [] }
   }
 }
 
@@ -84,15 +89,19 @@ export async function POST(request) {
   try {
     const { setting, line } = await request.json()
 
-    const keys = await pickAmbienceKeys(setting, line)
+    const result = await pickAmbienceKeys(setting, line)
 
-    if (keys.length === 0) {
+    if (result.noMatch) {
+      return Response.json({ audio: null, audio2: null, noMatch: true, suggestion: result.suggestion })
+    }
+
+    if (result.keys.length === 0) {
       return Response.json({ audio: null, audio2: null })
     }
 
     const [audio, audio2] = await Promise.all([
-      keys[0] ? fetchFreesound(soundMap[keys[0]]) : Promise.resolve(null),
-      keys[1] ? fetchFreesound(soundMap[keys[1]]) : Promise.resolve(null),
+      result.keys[0] ? fetchFreesound(soundMap[result.keys[0]]) : Promise.resolve(null),
+      result.keys[1] ? fetchFreesound(soundMap[result.keys[1]]) : Promise.resolve(null),
     ])
 
     return Response.json({ audio, audio2 })
