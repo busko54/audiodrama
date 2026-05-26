@@ -20,7 +20,28 @@ const voiceMap = {
 }
 
 async function generateAudio(text, voiceId, tone) {
-  const directedText = tone === 'whisper' ? `<whisper>${text}</whisper>` : text
+  const toneSettings = {
+    normal:     { stability: 0.5, similarity_boost: 0.75, style: 0.3, text: text },
+    solemn:     { stability: 0.6, similarity_boost: 0.75, style: 0.3, text: text },
+    warm:       { stability: 0.6, similarity_boost: 0.75, style: 0.4, text: text },
+    sarcastic:  { stability: 0.4, similarity_boost: 0.75, style: 0.6, text: text },
+    excited:    { stability: 0.3, similarity_boost: 0.80, style: 0.7, text: text },
+    frantic:    { stability: 0.2, similarity_boost: 0.80, style: 0.8, text: text },
+    irritated:  { stability: 0.3, similarity_boost: 0.75, style: 0.7, text: text },
+    commanding: { stability: 0.5, similarity_boost: 0.80, style: 0.6, text: text },
+    pleading:   { stability: 0.3, similarity_boost: 0.75, style: 0.7, text: text },
+    ominous:    { stability: 0.7, similarity_boost: 0.75, style: 0.5, text: text },
+    tremble:    { stability: 0.2, similarity_boost: 0.75, style: 0.7, text: text },
+    breathless: { stability: 0.2, similarity_boost: 0.75, style: 0.7, text: text },
+    exhausted:  { stability: 0.6, similarity_boost: 0.75, style: 0.2, text: text },
+    mocking:    { stability: 0.3, similarity_boost: 0.75, style: 0.7, text: text },
+    cry:        { stability: 0.2, similarity_boost: 0.80, style: 0.8, text: text },
+    shout:      { stability: 0.2, similarity_boost: 0.80, style: 0.9, text: text },
+    laugh:      { stability: 0.2, similarity_boost: 0.80, style: 0.8, text: text },
+    whisper:    { stability: 0.7, similarity_boost: 0.75, style: 0.2, text: `<whisper>${text}</whisper>` },
+  }
+
+  const settings = toneSettings[tone] || toneSettings.normal
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -31,12 +52,12 @@ async function generateAudio(text, voiceId, tone) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        text: directedText,
+        text: settings.text,
         model_id: 'eleven_flash_v2_5',
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.5,
+          stability: settings.stability,
+          similarity_boost: settings.similarity_boost,
+          style: settings.style,
           use_speaker_boost: true
         }
       })
