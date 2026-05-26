@@ -84,16 +84,18 @@ export async function POST(request) {
       const ambienceData = ambienceRes.ok ? await ambienceRes.json() : {}
 
       const result = {
-        speaker: block.speaker,
-        line: block.line,
-        tone: block.tone,
-        emotion: block.emotion,
-        audio,
-        ambienceAudio: ambienceData.audio || null,
-        ambience2Audio: ambienceData.audio2 || null,
-        ambience_volume: 0.3,
-        ambience2_volume: 0.3,
-      }
+  speaker: block.speaker,
+  line: block.line,
+  tone: block.tone,
+  emotion: block.emotion,
+  audio,
+  ambienceAudio: ambienceData.audio || null,
+  ambience2Audio: ambienceData.audio2 || null,
+  ambience_volume: 0.3,
+  ambience2_volume: 0.3,
+  noMatch: ambienceData.noMatch || false,
+  suggestion: ambienceData.suggestion || null,
+}
 
       // Cache the block
       if (bookId && chapterNumber) {
