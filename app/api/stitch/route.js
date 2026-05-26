@@ -110,9 +110,11 @@ export async function POST(request) {
         ambienceAudio: ambienceData.audio || null,
         ambience2Audio: ambienceData.audio2 || null,
         momentAudio: ambienceData.momentAudio || null,
+        moment2Audio: ambienceData.moment2Audio || null,
         ambience_volume: 0.3,
         ambience2_volume: 0.3,
-        moment_volume: 0.6,
+        moment_volume: 0.9,
+        moment2_volume: 0.9,
         noMatch: ambienceData.noMatch || false,
         suggestion: ambienceData.suggestion || null,
       }
