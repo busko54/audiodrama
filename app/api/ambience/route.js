@@ -1,66 +1,62 @@
 export const dynamic = 'force-dynamic'
 
-const keywordMap = {
-  'clock': 'clock chime midnight bells',
-  'midnight': 'clock striking midnight chime',
-  'wolves': 'wolves howling night forest',
-  'wolf': 'wolf howling night',
-  'wind': 'wind howling mountain night',
-  'thunder': 'thunder storm rumble',
-  'horses': 'horse hooves galloping',
-  'horse': 'horse hooves carriage',
-  'crowd': 'crowd murmur people talking',
-  'silence': null,
-  'dog': 'dog howling night',
-  'fire': 'fire crackling wood burning',
-  'rain': 'rain falling storm',
-  'train': 'steam train moving tracks',
-  'castle': 'wind dark castle eerie',
-  'snow': 'blizzard wind snow',
-  'creaking': 'wood floor creaking',
-  'footsteps': 'footsteps wooden floor indoor',
-  'door': 'door creaking opening',
-  'sobbing': 'woman crying sobbing',
-  'church': 'church bells distant',
-  'inn': 'tavern inn ambient quiet',
-  'carriage': 'horse carriage moving',
-  'whip': 'whip crack horse',
-  'screaming': 'crowd screaming panic',
-  'birds': 'loud birds chirping singing forest',
-   'chirping': 'loud birds chirping singing forest',
+const soundMap = {
+  'birds chirping': '766226',
+  'fireplace': '572304',
+  'raining': '434109',
+  'lightning': '251635',
+  'wind': '196677',
+  'crowd cheering': '678542',
+  'ballroom': '187776',
+  'horse carriage': '631829',
+  'church bells': '480014',
+  'door creaking': '195677',
+  'footsteps': '572752',
+  'wolves': '753896',
+  'thunder rumbling': '578236',
+  'crowd murmuring': '381373',
 }
 
-function getSearchQuery(ambienceText) {
-  if (!ambienceText || ambienceText === 'none') return null
-  
-  const lower = ambienceText.toLowerCase()
-  const words = lower.split(/\s+/)
-  
-  for (const [keyword, query] of Object.entries(keywordMap)) {
-    if (words.includes(keyword)) {
-      return query
-    }
-  }
-  
-  return ambienceText
-}
+async function pickAmbienceKeys(setting, line) {
+  const soundKeys = Object.keys(soundMap).join(', ')
 
-export async function POST(request) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 50,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an audio drama sound designer. Given a scene setting and a line of dialogue, pick 1 or 2 background ambient sounds that best fit the scene. Only pick from this exact list: ${soundKeys}. Return ONLY a JSON array of keys, nothing else. Example: ["fireplace", "crowd murmuring"]`
+        },
+        {
+          role: 'user',
+          content: `Setting: ${setting}\nLine: ${line}`
+        }
+      ]
+    })
+  })
+
+  const data = await response.json()
+  const text = data.choices[0].message.content.trim()
+
   try {
-    const { ambienceText } = await request.json()
-    
-    console.log('Ambience request:', ambienceText)
-    
-    const searchQuery = getSearchQuery(ambienceText)
-    
-    console.log('Search query:', searchQuery)
-    
-    if (!searchQuery) {
-      return Response.json({ audio: null })
-    }
+    const keys = JSON.parse(text)
+    return keys.filter(k => soundMap[k])
+  } catch {
+    return []
+  }
+}
 
-    const searchRes = await fetch(
-      `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(searchQuery)}&fields=id,name,previews,duration&filter=duration:[1+TO+30]&sort=rating_desc&page_size=5`,
+async function fetchFreesound(soundId) {
+  try {
+    const infoRes = await fetch(
+      `https://freesound.org/apiv2/sounds/${soundId}/`,
       {
         headers: {
           'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
@@ -68,52 +64,41 @@ export async function POST(request) {
       }
     )
 
-    if (!searchRes.ok) {
-      const errText = await searchRes.text()
-      console.error('Freesound search failed:', errText)
-      return Response.json({ audio: null })
-    }
+    if (!infoRes.ok) return null
 
-    const searchData = await searchRes.json()
-    
-    console.log('Freesound results count:', searchData.results?.length)
-    console.log('Freesound first result:', searchData.results?.[0]?.name)
+    const info = await infoRes.json()
+    const previewUrl = info.previews['preview-hq-mp3'] || info.previews['preview-lq-mp3']
 
-    if (!searchData.results || searchData.results.length === 0) {
-      console.log('No results found for query:', searchQuery)
-      return Response.json({ audio: null })
-    }
+    const audioRes = await fetch(previewUrl)
+    if (!audioRes.ok) return null
 
-    const sound = searchData.results[0]
-    const previewUrl = sound.previews['preview-hq-mp3'] || sound.previews['preview-lq-mp3']
-
-    console.log('Preview URL:', previewUrl)
-
-    if (!previewUrl) {
-      console.log('No preview URL found')
-      return Response.json({ audio: null })
-    }
-
-    const audioRes = await fetch(previewUrl, {
-      headers: {
-        'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
-      }
-    })
-
-    if (!audioRes.ok) {
-      console.error('Audio download failed:', audioRes.status)
-      return Response.json({ audio: null })
-    }
-
-    const audioBuffer = await audioRes.arrayBuffer()
-    const base64Audio = Buffer.from(audioBuffer).toString('base64')
-
-    console.log('Freesound audio fetched successfully:', sound.name, 'for query:', searchQuery)
-
-    return Response.json({ audio: base64Audio })
+    const buffer = await audioRes.arrayBuffer()
+    return Buffer.from(buffer).toString('base64')
 
   } catch (error) {
-    console.error('Ambience error:', error.message)
-    return Response.json({ audio: null })
+    console.error('Freesound fetch error:', error.message)
+    return null
+  }
+}
+
+export async function POST(request) {
+  try {
+    const { setting, line } = await request.json()
+
+    const keys = await pickAmbienceKeys(setting, line)
+
+    if (keys.length === 0) {
+      return Response.json({ audio: null, audio2: null })
+    }
+
+    const [audio, audio2] = await Promise.all([
+      keys[0] ? fetchFreesound(soundMap[keys[0]]) : Promise.resolve(null),
+      keys[1] ? fetchFreesound(soundMap[keys[1]]) : Promise.resolve(null),
+    ])
+
+    return Response.json({ audio, audio2 })
+
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 })
   }
 }
