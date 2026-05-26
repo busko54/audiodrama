@@ -55,23 +55,35 @@
       "tone": "warm",
       "emotion": "amused"
     },
-   {
-  "speaker": "mrs bennet",
-  "line": "Why, my dear, you must know —",
-  "tone": "excited",
-  "emotion": "excited"
-},
-{
-  "speaker": "pp_narrator",
-  "line": "Mrs. Long had told her:",
-  "tone": "normal",
-  "emotion": "neutral"
-},
-{
-  "speaker": "mrs bennet",
-  "line": "Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.",
-  "tone": "excited",
-  "emotion": "excited"
-}
+    {
+      "speaker": "mrs bennet",
+      "line": "Why, my dear, you must know —",
+      "tone": "excited",
+      "emotion": "excited"
+    },
+    {
+      "speaker": "pp_narrator",
+      "line": "Mrs. Long had told her:",
+      "tone": "normal",
+      "emotion": "neutral"
+    },
+    {
+      "speaker": "mrs bennet",
+      "line": "Netherfield is taken by a young man of large fortune from the north of England;",
+      "tone": "excited",
+      "emotion": "excited"
+    },
+    {
+      "speaker": "mrs bennet",
+      "line": "that he came down on Monday in a chaise and four to see the place,",
+      "tone": "excited",
+      "emotion": "excited"
+    },
+    {
+      "speaker": "mrs bennet",
+      "line": "and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.",
+      "tone": "excited",
+      "emotion": "excited"
+    }
   ]
 }
