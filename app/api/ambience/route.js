@@ -43,8 +43,7 @@ async function pickSounds(setting, line) {
 - "background2": a second optional looping background sound from the same list, or null.
 - "moment": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return a moment sound if something in the line directly references it (e.g. "chaise and four" = "horse carriage", "door opened" = "door creaking"). If nothing is mentioned return null.
 The setting drives background sounds. The line text drives the moment sound.
-Return ONLY valid JSON. No markdown. No backticks.`
-        },
+Return ONLY valid JSON. No markdown. No backticks. You MUST always return a background1 value — the setting will always match at least one background sound. Never return null for background1.`        },
         {
           role: 'user',
           content: `Setting: ${setting}\nLine: ${line}`
