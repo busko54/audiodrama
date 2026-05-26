@@ -32,8 +32,7 @@ async function pickAmbienceKeys(setting, line) {
       messages: [
         {
           role: 'system',
-          content: `You are an audio drama sound designer. Given a scene setting and a line of dialogue, pick 1 or 2 background ambient sounds that best fit the scene. Only pick from this exact list: ${soundKeys}. Return ONLY a JSON array of keys, nothing else. Example: ["fireplace", "crowd murmuring"]`
-        },
+content: `You are an audio drama sound designer. Pick 1 or 2 background ambient sounds that fit the SETTING, not the specific words in the line. The setting is the most important factor. Only pick from this exact list: ${soundKeys}. If none of the sounds are a good fit, return {"noMatch": true, "suggestion": "describe the ideal sound here"} instead. Otherwise return ONLY a JSON array of keys. Example: ["fireplace", "crowd murmuring"]`        },
         {
           role: 'user',
           content: `Setting: ${setting}\nLine: ${line}`
