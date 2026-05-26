@@ -10,6 +10,7 @@ export default function Home() {
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
+  const momentRef = useRef(null)
 
   const runFullTest = async () => {
     setLoading(true)
@@ -49,14 +50,9 @@ export default function Home() {
     if (index >= blocks.length) {
       setIsPlaying(false)
       setCurrentBlock(-1)
-      if (ambienceRef.current) {
-        ambienceRef.current.pause()
-        ambienceRef.current.src = ''
-      }
-      if (ambience2Ref.current) {
-        ambience2Ref.current.pause()
-        ambience2Ref.current.src = ''
-      }
+      if (ambienceRef.current) { ambienceRef.current.pause(); ambienceRef.current.src = '' }
+      if (ambience2Ref.current) { ambience2Ref.current.pause(); ambience2Ref.current.src = '' }
+      if (momentRef.current) { momentRef.current.pause(); momentRef.current.src = '' }
       return
     }
     setCurrentBlock(index)
@@ -78,8 +74,7 @@ export default function Home() {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
           ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
           ambienceRef.current.loop = true
-          ambienceRef.current.play()
-            .catch(err => console.error('Ambience play error:', err))
+          ambienceRef.current.play().catch(err => console.error('Ambience play error:', err))
         } else {
           ambienceRef.current.pause()
           ambienceRef.current.src = ''
@@ -91,11 +86,22 @@ export default function Home() {
           ambience2Ref.current.src = `data:audio/mpeg;base64,${block.ambience2Audio}`
           ambience2Ref.current.volume = Math.min(block.ambience2_volume || 0.3, 1.0)
           ambience2Ref.current.loop = true
-          ambience2Ref.current.play()
-            .catch(err => console.error('Ambience2 play error:', err))
+          ambience2Ref.current.play().catch(err => console.error('Ambience2 play error:', err))
         } else {
           ambience2Ref.current.pause()
           ambience2Ref.current.src = ''
+        }
+      }
+
+      if (momentRef.current) {
+        if (block.momentAudio) {
+          momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
+          momentRef.current.volume = Math.min(block.moment_volume || 0.6, 1.0)
+          momentRef.current.loop = false
+          momentRef.current.play().catch(err => console.error('Moment play error:', err))
+        } else {
+          momentRef.current.pause()
+          momentRef.current.src = ''
         }
       }
     }
@@ -115,12 +121,8 @@ export default function Home() {
       maxWidth: '800px',
       margin: '0 auto'
     }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-        🎭 AudioDrama
-      </h1>
-      <p style={{ color: '#888', marginBottom: '0.5rem' }}>
-        Pride and Prejudice — Chapter I
-      </p>
+      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎭 AudioDrama</h1>
+      <p style={{ color: '#888', marginBottom: '0.5rem' }}>Pride and Prejudice — Chapter I</p>
 
       {fromCache && (
         <p style={{ color: '#4CAF50', fontSize: '12px', marginBottom: '1.5rem' }}>
@@ -131,20 +133,16 @@ export default function Home() {
       <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
       <audio ref={ambienceRef} loop style={{ display: 'none' }} />
       <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
+      <audio ref={momentRef} style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <button
           onClick={runFullTest}
           disabled={loading}
           style={{
-            background: '#8B0000',
-            color: '#fff',
-            border: 'none',
-            padding: '14px 28px',
-            borderRadius: '8px',
-            fontSize: '16px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1
+            background: '#8B0000', color: '#fff', border: 'none',
+            padding: '14px 28px', borderRadius: '8px', fontSize: '16px',
+            cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1
           }}
         >
           {loading ? 'Generating...' : 'Play Pride and Prejudice'}
@@ -154,13 +152,8 @@ export default function Home() {
           <button
             onClick={() => isPlaying ? setIsPlaying(false) : playFrom(0)}
             style={{
-              background: '#1a5c2e',
-              color: '#fff',
-              border: 'none',
-              padding: '14px 28px',
-              borderRadius: '8px',
-              fontSize: '16px',
-              cursor: 'pointer'
+              background: '#1a5c2e', color: '#fff', border: 'none',
+              padding: '14px 28px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer'
             }}
           >
             {isPlaying ? '⏸ Pause' : '▶ Play All'}
@@ -170,12 +163,8 @@ export default function Home() {
 
       {loading && (
         <div style={{
-          background: '#111',
-          border: '1px solid #333',
-          borderRadius: '10px',
-          padding: '2rem',
-          textAlign: 'center',
-          color: '#888'
+          background: '#111', border: '1px solid #333', borderRadius: '10px',
+          padding: '2rem', textAlign: 'center', color: '#888'
         }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎭</div>
           <p>Generating voices and ambient sounds...</p>
@@ -190,94 +179,43 @@ export default function Home() {
           style={{
             background: currentBlock === i ? '#1a0a0a' : '#111',
             border: currentBlock === i ? '1px solid #8B0000' : '1px solid #333',
-            borderRadius: '10px',
-            padding: '1.25rem',
-            marginBottom: '1rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
+            borderRadius: '10px', padding: '1.25rem', marginBottom: '1rem',
+            cursor: 'pointer', transition: 'all 0.2s'
           }}
         >
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            marginBottom: '8px',
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             {currentBlock === i && <span style={{ fontSize: '16px' }}>🔊</span>}
-            <span style={{
-              background: '#8B0000',
-              color: '#fff',
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontFamily: 'monospace'
-            }}>
+            <span style={{ background: '#8B0000', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.speaker}
             </span>
-            <span style={{
-              background: '#1a1a1a',
-              color: '#888',
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontFamily: 'monospace'
-            }}>
+            <span style={{ background: '#1a1a1a', color: '#888', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.tone}
             </span>
-            <span style={{
-              background: '#1a1a1a',
-              color: '#888',
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontFamily: 'monospace'
-            }}>
+            <span style={{ background: '#1a1a1a', color: '#888', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.emotion}
             </span>
             {block.ambienceAudio && (
-              <span style={{
-                background: '#0d2d1a',
-                color: '#4CAF50',
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontFamily: 'monospace'
-              }}>
+              <span style={{ background: '#0d2d1a', color: '#4CAF50', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                 🎵 ambience
               </span>
             )}
             {block.ambience2Audio && (
-              <span style={{
-                background: '#0d2d1a',
-                color: '#4CAF50',
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontFamily: 'monospace'
-              }}>
+              <span style={{ background: '#0d2d1a', color: '#4CAF50', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                 🎵 ambience 2
               </span>
             )}
+            {block.momentAudio && (
+              <span style={{ background: '#1a1a2d', color: '#7eb8f7', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                ⚡ moment
+              </span>
+            )}
             {block.noMatch && (
-              <span style={{
-                background: '#2d1f00',
-                color: '#FFA500',
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontFamily: 'monospace'
-              }}>
+              <span style={{ background: '#2d1f00', color: '#FFA500', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                 ⚠️ No sound found — suggested: {block.suggestion}
               </span>
             )}
           </div>
-          <p style={{
-            color: currentBlock === i ? '#fff' : '#ccc',
-            fontSize: '14px',
-            lineHeight: '1.6',
-            fontStyle: 'italic'
-          }}>
+          <p style={{ color: currentBlock === i ? '#fff' : '#ccc', fontSize: '14px', lineHeight: '1.6', fontStyle: 'italic' }}>
             "{block.line}"
           </p>
         </div>
