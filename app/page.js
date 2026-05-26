@@ -99,7 +99,7 @@ export default function Home() {
         if (block.momentAudio) {
           momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
           momentRef.current.volume = block.moment_volume || 0.9
-          momentRef.current.loop = true
+          momentRef.current.loop = false
           momentRef.current.play().catch(err => console.error('Moment play error:', err))
         } else {
           momentRef.current.pause()
@@ -111,7 +111,7 @@ export default function Home() {
         if (block.moment2Audio) {
           moment2Ref.current.src = `data:audio/mpeg;base64,${block.moment2Audio}`
           moment2Ref.current.volume = block.moment2_volume || 0.9
-          moment2Ref.current.loop = true
+          moment2Ref.current.loop = false
           moment2Ref.current.play().catch(err => console.error('Moment2 play error:', err))
         } else {
           moment2Ref.current.pause()
