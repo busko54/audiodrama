@@ -259,6 +259,18 @@ export default function Home() {
                 🎵 ambience 2
               </span>
             )}
+            {block.noMatch && (
+              <span style={{
+                background: '#2d1f00',
+                color: '#FFA500',
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontFamily: 'monospace'
+              }}>
+                ⚠️ No sound found — suggested: {block.suggestion}
+              </span>
+            )}
           </div>
           <p style={{
             color: currentBlock === i ? '#fff' : '#ccc',
