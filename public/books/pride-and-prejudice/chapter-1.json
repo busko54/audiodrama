@@ -75,7 +75,13 @@
     },
     {
       "speaker": "mrs bennet",
-      "line": "that he came down on Monday in a chaise and four to see the place,",
+      "line": "that he came down on Monday in a chaise and four",
+      "tone": "excited",
+      "emotion": "excited"
+    },
+    {
+      "speaker": "mrs bennet",
+      "line": "to see the place,",
       "tone": "excited",
       "emotion": "excited"
     },
