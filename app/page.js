@@ -97,11 +97,10 @@ export default function Home() {
   if (block.momentAudio) {
     momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
 momentRef.current.volume = 1.0
-momentRef.current.loop = false
-// Duck ambience completely while moment plays
+momentRef.current.loop = true
 if (ambienceRef.current) ambienceRef.current.volume = 0.0
 if (ambience2Ref.current) ambience2Ref.current.volume = 0.0
-if (voiceRef.current) voiceRef.current.volume = 0.4
+if (voiceRef.current) voiceRef.current.volume = 0.7
 momentRef.current.play().catch(err => console.error('Moment play error:', err))
 // Restore all after 4 seconds
 setTimeout(() => {
