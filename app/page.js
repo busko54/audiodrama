@@ -11,6 +11,7 @@ export default function Home() {
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
   const momentRef = useRef(null)
+  const moment2Ref = useRef(null)
 
   const runFullTest = async () => {
     setLoading(true)
@@ -53,6 +54,7 @@ export default function Home() {
       if (ambienceRef.current) { ambienceRef.current.pause(); ambienceRef.current.src = '' }
       if (ambience2Ref.current) { ambience2Ref.current.pause(); ambience2Ref.current.src = '' }
       if (momentRef.current) { momentRef.current.pause(); momentRef.current.src = '' }
+      if (moment2Ref.current) { moment2Ref.current.pause(); moment2Ref.current.src = '' }
       return
     }
     setCurrentBlock(index)
@@ -65,14 +67,14 @@ export default function Home() {
 
       if (block.audio && voiceRef.current) {
         voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-        voiceRef.current.volume = 1.0
+        voiceRef.current.volume = (block.momentAudio || block.moment2Audio) ? 0.7 : 1.0
         voiceRef.current.play()
       }
 
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = Math.min(block.ambience_volume || 0.25, 1.0)
+          ambienceRef.current.volume = (block.momentAudio || block.moment2Audio) ? 0.0 : (block.ambience_volume || 0.3)
           ambienceRef.current.loop = true
           ambienceRef.current.play().catch(err => console.error('Ambience play error:', err))
         } else {
@@ -84,7 +86,7 @@ export default function Home() {
       if (ambience2Ref.current) {
         if (block.ambience2Audio) {
           ambience2Ref.current.src = `data:audio/mpeg;base64,${block.ambience2Audio}`
-          ambience2Ref.current.volume = Math.min(block.ambience2_volume || 0.3, 1.0)
+          ambience2Ref.current.volume = (block.momentAudio || block.moment2Audio) ? 0.0 : (block.ambience2_volume || 0.3)
           ambience2Ref.current.loop = true
           ambience2Ref.current.play().catch(err => console.error('Ambience2 play error:', err))
         } else {
@@ -93,31 +95,41 @@ export default function Home() {
         }
       }
 
-    if (momentRef.current) {
-  if (block.momentAudio) {
-    momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
-momentRef.current.volume = 1.0
-momentRef.current.loop = true
-if (ambienceRef.current) ambienceRef.current.volume = 0.0
-if (ambience2Ref.current) ambience2Ref.current.volume = 0.0
-if (voiceRef.current) voiceRef.current.volume = 0.7
-momentRef.current.play().catch(err => console.error('Moment play error:', err))
-// Restore all after 4 seconds
-setTimeout(() => {
-  if (ambienceRef.current) ambienceRef.current.volume = block.ambience_volume || 0.3
-  if (ambience2Ref.current) ambience2Ref.current.volume = block.ambience2_volume || 0.3
-  if (voiceRef.current) voiceRef.current.volume = 1.0
-}, 4000)
-  } else {
-    momentRef.current.pause()
-    momentRef.current.src = ''
-  }
-}
+      if (momentRef.current) {
+        if (block.momentAudio) {
+          momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
+          momentRef.current.volume = block.moment_volume || 0.9
+          momentRef.current.loop = true
+          momentRef.current.play().catch(err => console.error('Moment play error:', err))
+        } else {
+          momentRef.current.pause()
+          momentRef.current.src = ''
+        }
+      }
+
+      if (moment2Ref.current) {
+        if (block.moment2Audio) {
+          moment2Ref.current.src = `data:audio/mpeg;base64,${block.moment2Audio}`
+          moment2Ref.current.volume = block.moment2_volume || 0.9
+          moment2Ref.current.loop = true
+          moment2Ref.current.play().catch(err => console.error('Moment2 play error:', err))
+        } else {
+          moment2Ref.current.pause()
+          moment2Ref.current.src = ''
+        }
+      }
     }
   }, [currentBlock, blocks])
 
   const handleVoiceEnd = () => {
-    playFrom(currentBlock + 1)
+    const current = blocks[currentBlock]
+    if (current && (current.momentAudio || current.moment2Audio)) {
+      setTimeout(() => {
+        playFrom(currentBlock + 1)
+      }, 3000)
+    } else {
+      playFrom(currentBlock + 1)
+    }
   }
 
   return (
@@ -143,6 +155,7 @@ setTimeout(() => {
       <audio ref={ambienceRef} loop style={{ display: 'none' }} />
       <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
       <audio ref={momentRef} style={{ display: 'none' }} />
+      <audio ref={moment2Ref} style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <button
@@ -216,6 +229,11 @@ setTimeout(() => {
             {block.momentAudio && (
               <span style={{ background: '#1a1a2d', color: '#7eb8f7', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                 ⚡ moment
+              </span>
+            )}
+            {block.moment2Audio && (
+              <span style={{ background: '#1a1a2d', color: '#7eb8f7', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                ⚡ moment 2
               </span>
             )}
             {block.noMatch && (
