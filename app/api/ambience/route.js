@@ -47,8 +47,7 @@ Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
           role: 'user',
-          content: `Setting: ${setting}\nLine: ${line}`
-        }
+content: `Setting: ${setting}\nLine: ${line}\n\nNote: if the line mentions a horse, carriage, or riding, return both "horse carriage" and "horse neighing" as moment1 and moment2.`        }
       ]
     })
   })
