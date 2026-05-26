@@ -1,24 +1,30 @@
 export const dynamic = 'force-dynamic'
 
-const soundMap = {
-  'birds chirping': '766226',
+const backgroundSounds = {
   'fireplace': '572304',
-  'raining': '434109',
-  'lightning': '251635',
-  'wind': '196677',
-  'crowd cheering': '678542',
-  'ballroom': '187776',
-  'horse carriage': '631829',
-  'church bells': '480014',
-  'door creaking': '195677',
-  'footsteps': '572752',
-  'wolves': '753896',
-  'thunder rumbling': '578236',
   'crowd murmuring': '381373',
+  'ballroom': '187776',
+  'birds chirping': '766226',
+  'raining': '434109',
+  'wind': '196677',
+  'thunder rumbling': '578236',
+  'wolves': '753896',
 }
 
-async function pickAmbienceKeys(setting, line) {
-  const soundKeys = Object.keys(soundMap).join(', ')
+const momentSounds = {
+  'horse carriage': '631829',
+  'door creaking': '195677',
+  'footsteps': '572752',
+  'church bells': '480014',
+  'lightning': '251635',
+  'crowd cheering': '678542',
+}
+
+const allSounds = { ...backgroundSounds, ...momentSounds }
+
+async function pickSounds(setting, line) {
+  const backgroundKeys = Object.keys(backgroundSounds).join(', ')
+  const momentKeys = Object.keys(momentSounds).join(', ')
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -32,7 +38,12 @@ async function pickAmbienceKeys(setting, line) {
       messages: [
         {
           role: 'system',
-          content: `You are an audio drama sound designer. Pick 1 or 2 background ambient sounds that fit the SETTING, not the specific words in the line. The setting is the most important factor. Only pick from this exact list: ${soundKeys}. If none of the sounds are a good fit, return a JSON object like {"noMatch": true, "suggestion": "describe the ideal sound here"}. Otherwise return ONLY a JSON array of keys. Example: ["fireplace", "crowd murmuring"]`
+          content: `You are an audio drama sound designer. Return a JSON object with three fields:
+- "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. If nothing fits return null.
+- "background2": a second optional looping background sound from the same list, or null.
+- "moment": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return a moment sound if something in the line directly references it (e.g. "chaise and four" = "horse carriage", "door opened" = "door creaking"). If nothing is mentioned return null.
+The setting drives background sounds. The line text drives the moment sound.
+Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
           role: 'user',
@@ -47,13 +58,15 @@ async function pickAmbienceKeys(setting, line) {
 
   try {
     const parsed = JSON.parse(text)
-    if (parsed.noMatch) {
-      return { noMatch: true, suggestion: parsed.suggestion }
+    return {
+      background1: backgroundSounds[parsed.background1] ? parsed.background1 : null,
+      background2: backgroundSounds[parsed.background2] ? parsed.background2 : null,
+      moment: momentSounds[parsed.moment] ? parsed.moment : null,
+      noMatch: !parsed.background1 && !parsed.background2,
+      suggestion: parsed.suggestion || null
     }
-    const keys = parsed.filter(k => soundMap[k])
-    return { noMatch: false, keys }
   } catch {
-    return { noMatch: false, keys: [] }
+    return { background1: null, background2: null, moment: null, noMatch: true, suggestion: null }
   }
 }
 
@@ -89,22 +102,21 @@ export async function POST(request) {
   try {
     const { setting, line } = await request.json()
 
-    const result = await pickAmbienceKeys(setting, line)
+    const picked = await pickSounds(setting, line)
 
-    if (result.noMatch) {
-      return Response.json({ audio: null, audio2: null, noMatch: true, suggestion: result.suggestion })
-    }
-
-    if (result.keys.length === 0) {
-      return Response.json({ audio: null, audio2: null })
-    }
-
-    const [audio, audio2] = await Promise.all([
-      result.keys[0] ? fetchFreesound(soundMap[result.keys[0]]) : Promise.resolve(null),
-      result.keys[1] ? fetchFreesound(soundMap[result.keys[1]]) : Promise.resolve(null),
+    const [audio, audio2, momentAudio] = await Promise.all([
+      picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
+      picked.background2 ? fetchFreesound(backgroundSounds[picked.background2]) : Promise.resolve(null),
+      picked.moment ? fetchFreesound(momentSounds[picked.moment]) : Promise.resolve(null),
     ])
 
-    return Response.json({ audio, audio2 })
+    return Response.json({
+      audio,
+      audio2,
+      momentAudio,
+      noMatch: picked.noMatch,
+      suggestion: picked.suggestion
+    })
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 })
