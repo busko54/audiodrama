@@ -93,17 +93,25 @@ export default function Home() {
         }
       }
 
-      if (momentRef.current) {
-        if (block.momentAudio) {
-          momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
-          momentRef.current.volume = Math.min(block.moment_volume || 0.6, 1.0)
-          momentRef.current.loop = false
-          momentRef.current.play().catch(err => console.error('Moment play error:', err))
-        } else {
-          momentRef.current.pause()
-          momentRef.current.src = ''
-        }
-      }
+    if (momentRef.current) {
+  if (block.momentAudio) {
+    momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
+    momentRef.current.volume = 0.9
+    momentRef.current.loop = false
+    // Duck ambience while moment plays
+    if (ambienceRef.current) ambienceRef.current.volume = 0.05
+    if (ambience2Ref.current) ambience2Ref.current.volume = 0.05
+    momentRef.current.play().catch(err => console.error('Moment play error:', err))
+    // Restore ambience after 3 seconds
+    setTimeout(() => {
+      if (ambienceRef.current) ambienceRef.current.volume = block.ambience_volume || 0.3
+      if (ambience2Ref.current) ambience2Ref.current.volume = block.ambience2_volume || 0.3
+    }, 3000)
+  } else {
+    momentRef.current.pause()
+    momentRef.current.src = ''
+  }
+}
     }
   }, [currentBlock, blocks])
 
