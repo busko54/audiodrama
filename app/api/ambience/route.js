@@ -20,8 +20,6 @@ const momentSounds = {
   'crowd cheering': '678542',
 }
 
-const allSounds = { ...backgroundSounds, ...momentSounds }
-
 async function pickSounds(setting, line) {
   const backgroundKeys = Object.keys(backgroundSounds).join(', ')
   const momentKeys = Object.keys(momentSounds).join(', ')
@@ -39,11 +37,12 @@ async function pickSounds(setting, line) {
         {
           role: 'system',
           content: `You are an audio drama sound designer. Return a JSON object with three fields:
-- "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. If nothing fits return null.
+- "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
-- "moment": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return a moment sound if something in the line directly references it (e.g. "chaise and four" = "horse carriage", "door opened" = "door creaking"). If nothing is mentioned return null.
+- "moment": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return a moment sound if something in the line directly references it. If nothing is mentioned return null.
 The setting drives background sounds. The line text drives the moment sound.
-Return ONLY valid JSON. No markdown. No backticks. You MUST always return a background1 value — the setting will always match at least one background sound. Never return null for background1.`        },
+Return ONLY valid JSON. No markdown. No backticks.`
+        },
         {
           role: 'user',
           content: `Setting: ${setting}\nLine: ${line}`
@@ -54,23 +53,31 @@ Return ONLY valid JSON. No markdown. No backticks. You MUST always return a back
 
   const data = await response.json()
   const text = data.choices[0].message.content.trim()
+  console.log('GPT ambience response:', text)
 
   try {
     const parsed = JSON.parse(text)
+    console.log('Parsed:', parsed)
+    console.log('background1 valid:', !!backgroundSounds[parsed.background1])
+    console.log('background2 valid:', !!backgroundSounds[parsed.background2])
+    console.log('moment valid:', !!momentSounds[parsed.moment])
+
     return {
       background1: backgroundSounds[parsed.background1] ? parsed.background1 : null,
       background2: backgroundSounds[parsed.background2] ? parsed.background2 : null,
       moment: momentSounds[parsed.moment] ? parsed.moment : null,
-      noMatch: !parsed.background1 && !parsed.background2,
+      noMatch: !backgroundSounds[parsed.background1],
       suggestion: parsed.suggestion || null
     }
-  } catch {
+  } catch (e) {
+    console.error('JSON parse error:', e.message, 'Raw text:', text)
     return { background1: null, background2: null, moment: null, noMatch: true, suggestion: null }
   }
 }
 
 async function fetchFreesound(soundId) {
   try {
+    console.log('Fetching Freesound ID:', soundId)
     const infoRes = await fetch(
       `https://freesound.org/apiv2/sounds/${soundId}/`,
       {
@@ -80,12 +87,15 @@ async function fetchFreesound(soundId) {
       }
     )
 
+    console.log('Freesound info status:', infoRes.status)
     if (!infoRes.ok) return null
 
     const info = await infoRes.json()
     const previewUrl = info.previews['preview-hq-mp3'] || info.previews['preview-lq-mp3']
+    console.log('Preview URL:', previewUrl)
 
     const audioRes = await fetch(previewUrl)
+    console.log('Audio fetch status:', audioRes.status)
     if (!audioRes.ok) return null
 
     const buffer = await audioRes.arrayBuffer()
@@ -100,14 +110,18 @@ async function fetchFreesound(soundId) {
 export async function POST(request) {
   try {
     const { setting, line } = await request.json()
+    console.log('Ambience route called. Setting:', setting, 'Line:', line?.slice(0, 50))
 
     const picked = await pickSounds(setting, line)
+    console.log('Picked sounds:', picked)
 
     const [audio, audio2, momentAudio] = await Promise.all([
       picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
       picked.background2 ? fetchFreesound(backgroundSounds[picked.background2]) : Promise.resolve(null),
       picked.moment ? fetchFreesound(momentSounds[picked.moment]) : Promise.resolve(null),
     ])
+
+    console.log('Audio fetched:', !!audio, !!audio2, !!momentAudio)
 
     return Response.json({
       audio,
@@ -118,6 +132,7 @@ export async function POST(request) {
     })
 
   } catch (error) {
+    console.error('Ambience route error:', error.message)
     return Response.json({ error: error.message }, { status: 500 })
   }
 }
