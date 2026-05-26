@@ -33,6 +33,7 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         blocks: parseData.blocks,
+        setting: parseData.setting,
         bookId: 'pride-and-prejudice',
         chapterNumber: 1
       })
@@ -234,7 +235,7 @@ export default function Home() {
             }}>
               {block.emotion}
             </span>
-            {block.ambience && block.ambience !== 'none' && (
+            {block.ambienceAudio && (
               <span style={{
                 background: '#0d2d1a',
                 color: '#4CAF50',
@@ -243,10 +244,10 @@ export default function Home() {
                 borderRadius: '4px',
                 fontFamily: 'monospace'
               }}>
-                🎵 {block.ambience}
+                🎵 ambience
               </span>
             )}
-            {block.ambience2 && (
+            {block.ambience2Audio && (
               <span style={{
                 background: '#0d2d1a',
                 color: '#4CAF50',
@@ -255,7 +256,7 @@ export default function Home() {
                 borderRadius: '4px',
                 fontFamily: 'monospace'
               }}>
-                🎵 {block.ambience2}
+                🎵 ambience 2
               </span>
             )}
           </div>
