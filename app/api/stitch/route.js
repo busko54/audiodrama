@@ -79,7 +79,6 @@ export async function POST(request) {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]
 
-      // Check block cache first
       if (bookId && chapterNumber) {
         const cached = await getCachedBlock(bookId, chapterNumber, i)
         if (cached) {
@@ -89,12 +88,10 @@ export async function POST(request) {
         }
       }
 
-      // Generate voice
       const speakerKey = block.speaker.toLowerCase().trim()
       const voiceId = voiceMap[speakerKey] || voiceMap['narrator']
       const audio = await generateAudio(block.line, voiceId, block.tone)
 
-      // Generate ambience
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://audiodrama.vercel.app'
       const ambienceRes = await fetch(`${baseUrl}/api/ambience`, {
         method: 'POST',
@@ -105,20 +102,21 @@ export async function POST(request) {
       const ambienceData = ambienceRes.ok ? await ambienceRes.json() : {}
 
       const result = {
-  speaker: block.speaker,
-  line: block.line,
-  tone: block.tone,
-  emotion: block.emotion,
-  audio,
-  ambienceAudio: ambienceData.audio || null,
-  ambience2Audio: ambienceData.audio2 || null,
-  ambience_volume: 0.3,
-  ambience2_volume: 0.3,
-  noMatch: ambienceData.noMatch || false,
-  suggestion: ambienceData.suggestion || null,
-}
+        speaker: block.speaker,
+        line: block.line,
+        tone: block.tone,
+        emotion: block.emotion,
+        audio,
+        ambienceAudio: ambienceData.audio || null,
+        ambience2Audio: ambienceData.audio2 || null,
+        momentAudio: ambienceData.momentAudio || null,
+        ambience_volume: 0.3,
+        ambience2_volume: 0.3,
+        moment_volume: 0.6,
+        noMatch: ambienceData.noMatch || false,
+        suggestion: ambienceData.suggestion || null,
+      }
 
-      // Cache the block
       if (bookId && chapterNumber) {
         await cacheBlock(bookId, chapterNumber, i, result)
         console.log(`Block ${i} cached`)
