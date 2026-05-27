@@ -96,7 +96,7 @@ export async function POST(request) {
       const ambienceRes = await fetch(`${baseUrl}/api/ambience`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setting, line: block.line })
+        body: JSON.stringify({ setting, line: block.line, speaker: block.speaker })
       })
 
       const ambienceData = ambienceRes.ok ? await ambienceRes.json() : {}
@@ -111,6 +111,7 @@ export async function POST(request) {
         ambience2Audio: ambienceData.audio2 || null,
         momentAudio: ambienceData.momentAudio || null,
         moment2Audio: ambienceData.moment2Audio || null,
+        musicAudio: ambienceData.musicAudio || null,
         ambience_volume: 0.3,
         ambience2_volume: 0.3,
         moment_volume: 0.9,
