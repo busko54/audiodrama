@@ -78,6 +78,7 @@ export async function POST(request) {
 
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]
+      const previousSpeaker = i > 0 ? blocks[i - 1].speaker : null
 
       if (bookId && chapterNumber) {
         const cached = await getCachedBlock(bookId, chapterNumber, i)
@@ -96,7 +97,12 @@ export async function POST(request) {
       const ambienceRes = await fetch(`${baseUrl}/api/ambience`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setting, line: block.line, speaker: block.speaker })
+        body: JSON.stringify({
+          setting,
+          line: block.line,
+          speaker: block.speaker,
+          previousSpeaker
+        })
       })
 
       const ambienceData = ambienceRes.ok ? await ambienceRes.json() : {}
