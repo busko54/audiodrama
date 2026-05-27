@@ -54,7 +54,7 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * If the line mentions church bells or a church — return "church bells"
   * If the line mentions lightning or a lightning strike — return "lightning"
   * If a female character is speaking and the previous speaker was a narrator AND the line does not mention a horse or carriage — return "dress rustle"
-  * If a narrator line describes a male character ignoring someone, making no answer, or sitting quietly — return "teacup clink"
+  * If a narrator line contains the exact phrase "no answer" or "made no answer" — return "teacup clink"
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
