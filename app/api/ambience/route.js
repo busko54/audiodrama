@@ -48,7 +48,7 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
 - "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules:
-  * If the line mentions a horse, carriage, or riding — return "horse carriage"
+  * If the line mentions a horse, carriage, or riding — return "horse carriage" as moment1 AND "horse neighing" as moment2
   * If the line mentions a door opening or closing — return "door creaking"
   * If the line mentions footsteps or walking — return "footsteps"
   * If the line mentions church bells or a church — return "church bells"
