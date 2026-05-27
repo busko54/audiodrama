@@ -143,12 +143,12 @@ export default function Home() {
       if (musicRef.current) {
         if (block.musicAudio) {
           const newSrc = `data:audio/mpeg;base64,${block.musicAudio}`
-          if (musicRef.current.src !== newSrc) {
-            musicRef.current.src = newSrc
-            musicRef.current.loop = true
-            musicRef.current.play().catch(err => console.error('Music play error:', err))
-          }
-          musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
+if (!musicRef.current.src || musicRef.current.src === '' || musicRef.current.paused) {
+  musicRef.current.src = newSrc
+  musicRef.current.loop = true
+  musicRef.current.play().catch(err => console.error('Music play error:', err))
+}
+musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
         } else {
           musicRef.current.pause()
           musicRef.current.src = ''
