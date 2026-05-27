@@ -113,7 +113,7 @@ export async function POST(request) {
         line: block.line,
         tone: block.tone,
         emotion: block.emotion,
-        pause_after: block.pause_after || 0,
+        pause_after: ambienceData.pause_after || block.pause_after || 0,
         audio,
         ambienceAudio: ambienceData.audio || null,
         ambience2Audio: ambienceData.audio2 || null,
