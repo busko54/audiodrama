@@ -19,13 +19,15 @@ const momentSounds = {
   'church bells': '480014',
   'lightning': '251635',
   'crowd cheering': '678542',
+  'dress rustle': '365855',
+  'teacup clink': '735410',
 }
 
 const musicTracks = {
   'regency classical piano': '727792',
 }
 
-async function pickSounds(setting, line, speaker) {
+async function pickSounds(setting, line, speaker, previousSpeaker) {
   const backgroundKeys = Object.keys(backgroundSounds).join(', ')
   const momentKeys = Object.keys(momentSounds).join(', ')
   const musicKeys = Object.keys(musicTracks).join(', ')
@@ -45,15 +47,26 @@ async function pickSounds(setting, line, speaker) {
           content: `You are an audio drama sound designer. Return a JSON object with five fields:
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
-- "moment1": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return if something in the line directly references it. If nothing is mentioned return null.
-- "moment2": a second one-shot sound effect from the same moment list, or null. Only use if two distinct moment sounds are clearly referenced in the line.
+- "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules:
+  * If the line mentions a horse, carriage, or riding — return "horse carriage"
+  * If the line mentions a door opening or closing — return "door creaking"
+  * If the line mentions footsteps or walking — return "footsteps"
+  * If the line mentions church bells or a church — return "church bells"
+  * If the line mentions lightning or a lightning strike — return "lightning"
+  * If a female character is speaking and the previous speaker was a narrator — return "dress rustle" to indicate her entering or turning
+  * If a narrator line describes a male character ignoring someone, making no answer, or sitting quietly — return "teacup clink"
+  * Otherwise return null
+- "moment2": a second one-shot sound from the same list, or null. Only use if two distinct moment sounds apply. If the line mentions a horse AND a female character just entered, return both.
 - "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
-The setting drives background and music. The line text drives moment sounds.
+The setting drives background and music sounds. The line and speaker context drive moment sounds.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
           role: 'user',
-          content: `Setting: ${setting}\nLine: ${line}\n\nNote: if the line mentions a horse, carriage, or riding, return both "horse carriage" and "horse neighing" as moment1 and moment2.`
+          content: `Setting: ${setting}
+Line: ${line}
+Speaker: ${speaker}
+Previous speaker: ${previousSpeaker || 'none'}`
         }
       ]
     })
@@ -110,9 +123,9 @@ async function fetchFreesound(soundId) {
 
 export async function POST(request) {
   try {
-    const { setting, line, speaker } = await request.json()
+    const { setting, line, speaker, previousSpeaker } = await request.json()
 
-    const picked = await pickSounds(setting, line, speaker)
+    const picked = await pickSounds(setting, line, speaker, previousSpeaker)
 
     const [audio, audio2, momentAudio, moment2Audio, musicAudio] = await Promise.all([
       picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
