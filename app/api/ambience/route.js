@@ -21,9 +21,14 @@ const momentSounds = {
   'crowd cheering': '678542',
 }
 
-async function pickSounds(setting, line) {
+const musicTracks = {
+  'regency classical piano': '727792',
+}
+
+async function pickSounds(setting, line, speaker) {
   const backgroundKeys = Object.keys(backgroundSounds).join(', ')
   const momentKeys = Object.keys(momentSounds).join(', ')
+  const musicKeys = Object.keys(musicTracks).join(', ')
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -37,17 +42,19 @@ async function pickSounds(setting, line) {
       messages: [
         {
           role: 'system',
-          content: `You are an audio drama sound designer. Return a JSON object with four fields:
+          content: `You are an audio drama sound designer. Return a JSON object with five fields:
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
 - "moment1": a one-shot sound effect triggered by a specific object or action MENTIONED IN THE LINE from this list: ${momentKeys}. Only return if something in the line directly references it. If nothing is mentioned return null.
 - "moment2": a second one-shot sound effect from the same moment list, or null. Only use if two distinct moment sounds are clearly referenced in the line.
-The setting drives background sounds. The line text drives moment sounds.
+- "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
+The setting drives background and music. The line text drives moment sounds.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
           role: 'user',
-content: `Setting: ${setting}\nLine: ${line}\n\nNote: if the line mentions a horse, carriage, or riding, return both "horse carriage" and "horse neighing" as moment1 and moment2.`        }
+          content: `Setting: ${setting}\nLine: ${line}\n\nNote: if the line mentions a horse, carriage, or riding, return both "horse carriage" and "horse neighing" as moment1 and moment2.`
+        }
       ]
     })
   })
@@ -63,12 +70,13 @@ content: `Setting: ${setting}\nLine: ${line}\n\nNote: if the line mentions a hor
       background2: backgroundSounds[parsed.background2] ? parsed.background2 : null,
       moment1: momentSounds[parsed.moment1] ? parsed.moment1 : null,
       moment2: momentSounds[parsed.moment2] ? parsed.moment2 : null,
+      music: musicTracks[parsed.music] ? parsed.music : null,
       noMatch: !backgroundSounds[parsed.background1],
       suggestion: parsed.suggestion || null
     }
   } catch (e) {
     console.error('JSON parse error:', e.message, 'Raw text:', text)
-    return { background1: null, background2: null, moment1: null, moment2: null, noMatch: true, suggestion: null }
+    return { background1: null, background2: null, moment1: null, moment2: null, music: null, noMatch: true, suggestion: null }
   }
 }
 
@@ -102,15 +110,16 @@ async function fetchFreesound(soundId) {
 
 export async function POST(request) {
   try {
-    const { setting, line } = await request.json()
+    const { setting, line, speaker } = await request.json()
 
-    const picked = await pickSounds(setting, line)
+    const picked = await pickSounds(setting, line, speaker)
 
-    const [audio, audio2, momentAudio, moment2Audio] = await Promise.all([
+    const [audio, audio2, momentAudio, moment2Audio, musicAudio] = await Promise.all([
       picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
       picked.background2 ? fetchFreesound(backgroundSounds[picked.background2]) : Promise.resolve(null),
       picked.moment1 ? fetchFreesound(momentSounds[picked.moment1]) : Promise.resolve(null),
       picked.moment2 ? fetchFreesound(momentSounds[picked.moment2]) : Promise.resolve(null),
+      picked.music ? fetchFreesound(musicTracks[picked.music]) : Promise.resolve(null),
     ])
 
     return Response.json({
@@ -118,6 +127,7 @@ export async function POST(request) {
       audio2,
       momentAudio,
       moment2Audio,
+      musicAudio,
       noMatch: picked.noMatch,
       suggestion: picked.suggestion
     })
