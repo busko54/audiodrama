@@ -95,21 +95,25 @@ Previous speaker: ${previousSpeaker || 'none'}`
 
 async function fetchFreesound(soundId) {
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000)
+
     const infoRes = await fetch(
       `https://freesound.org/apiv2/sounds/${soundId}/`,
       {
-        headers: {
-          'Authorization': `Token ${process.env.FREESOUND_API_KEY}`
-        }
+        headers: { 'Authorization': `Token ${process.env.FREESOUND_API_KEY}` },
+        signal: controller.signal
       }
     )
 
-    if (!infoRes.ok) return null
+    if (!infoRes.ok) { clearTimeout(timeout); return null }
 
     const info = await infoRes.json()
-    const previewUrl = info.previews['preview-hq-mp3'] || info.previews['preview-lq-mp3']
+    const previewUrl = info.previews['preview-lq-mp3']
 
-    const audioRes = await fetch(previewUrl)
+    const audioRes = await fetch(previewUrl, { signal: controller.signal })
+    clearTimeout(timeout)
+
     if (!audioRes.ok) return null
 
     const buffer = await audioRes.arrayBuffer()
