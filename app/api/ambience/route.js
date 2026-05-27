@@ -58,7 +58,7 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
-The setting drives background and music sounds. The line and speaker context drive moment sounds.
+- "pause_after": a pause duration in milliseconds to add after this line. Use 1800 for awkward silences (e.g. a character ignores someone, makes no answer, or the scene calls for a dramatic beat). Use 0 for all other lines.The setting drives background and music sounds. The line and speaker context drive moment sounds.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
