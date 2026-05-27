@@ -20,7 +20,6 @@ const momentSounds = {
   'lightning': '251635',
   'crowd cheering': '678542',
   'dress rustle': '365855',
-  'teacup clink': '735410',
 }
 
 const musicTracks = {
