@@ -72,18 +72,19 @@ async function generateAudio(text, voiceId, tone) {
 
 export async function POST(request) {
   try {
-    const { blocks, setting, bookId, chapterNumber } = await request.json()
+    const { blocks, setting, bookId, chapterNumber, blockIndex, previousSpeaker } = await request.json()
 
     const results = []
 
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]
-      const previousSpeaker = i > 0 ? blocks[i - 1].speaker : null
+      const actualIndex = blockIndex ?? i
+      const prevSpeaker = previousSpeaker || null
 
       if (bookId && chapterNumber) {
-        const cached = await getCachedBlock(bookId, chapterNumber, i)
+        const cached = await getCachedBlock(bookId, chapterNumber, actualIndex)
         if (cached) {
-          console.log(`Block ${i} served from cache`)
+          console.log(`Block ${actualIndex} served from cache`)
           results.push(cached)
           continue
         }
@@ -101,7 +102,7 @@ export async function POST(request) {
           setting,
           line: block.line,
           speaker: block.speaker,
-          previousSpeaker
+          previousSpeaker: prevSpeaker
         })
       })
 
@@ -112,6 +113,7 @@ export async function POST(request) {
         line: block.line,
         tone: block.tone,
         emotion: block.emotion,
+        pause_after: block.pause_after || 0,
         audio,
         ambienceAudio: ambienceData.audio || null,
         ambience2Audio: ambienceData.audio2 || null,
@@ -127,8 +129,8 @@ export async function POST(request) {
       }
 
       if (bookId && chapterNumber) {
-        await cacheBlock(bookId, chapterNumber, i, result)
-        console.log(`Block ${i} cached`)
+        await cacheBlock(bookId, chapterNumber, actualIndex, result)
+        console.log(`Block ${actualIndex} cached`)
       }
 
       results.push(result)
