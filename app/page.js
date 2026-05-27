@@ -158,10 +158,9 @@ musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
   }, [currentBlock, blocks])
 
   const handleVoiceEnd = () => {
-    const current = blocks[currentBlock]
-    const pauseAfter = current?.pause_after || 0
-    const momentPause = (current?.momentAudio || current?.moment2Audio) ? 3000 : 0
-    const totalPause = Math.max(pauseAfter, momentPause)
+  const current = blocks[currentBlock]
+  const pauseAfter = current?.pause_after || 0
+  const totalPause = pauseAfter
 
     if (totalPause > 0) {
       if (ambienceRef.current && current?.ambienceAudio) {
