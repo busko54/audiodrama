@@ -31,12 +31,13 @@
       "tone": "excited",
       "emotion": "curious"
     },
-    {
-      "speaker": "pp_narrator",
-      "line": "Mr. Bennet made no answer.",
-      "tone": "normal",
-      "emotion": "dismissive"
-    },
+   {
+  "speaker": "pp_narrator",
+  "line": "Mr. Bennet made no answer.",
+  "tone": "normal",
+  "emotion": "dismissive",
+  "pause_after": 1800
+},
     {
       "speaker": "mrs bennet",
       "line": "Do you not want to know who has taken it?",
