@@ -6,6 +6,7 @@ const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator']
 export default function Home() {
   const [blocks, setBlocks] = useState([])
   const [loading, setLoading] = useState(false)
+  const [generatingIndex, setGeneratingIndex] = useState(-1)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [fromCache, setFromCache] = useState(false)
@@ -21,6 +22,7 @@ export default function Home() {
     setBlocks([])
     setCurrentBlock(-1)
     setIsPlaying(false)
+    setGeneratingIndex(-1)
 
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
@@ -32,22 +34,35 @@ export default function Home() {
       })
     })
     const parseData = await parseRes.json()
+    const allBlocks = parseData.blocks
+    const setting = parseData.setting
 
-    const stitchRes = await fetch('/api/stitch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        blocks: parseData.blocks,
-        setting: parseData.setting,
-        bookId: 'pride-and-prejudice',
-        chapterNumber: 1
+    const results = []
+
+    for (let i = 0; i < allBlocks.length; i++) {
+      setGeneratingIndex(i)
+
+      const stitchRes = await fetch('/api/stitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blocks: [allBlocks[i]],
+          setting,
+          bookId: 'pride-and-prejudice',
+          chapterNumber: 1,
+          blockIndex: i,
+          previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
+        })
       })
-    })
-    const stitchData = await stitchRes.json()
 
-    setFromCache(stitchData.fromCache || false)
-    setBlocks(stitchData.blocks)
+      const stitchData = await stitchRes.json()
+      const result = stitchData.blocks[0]
+      results.push(result)
+      setBlocks([...results])
+    }
+
     setLoading(false)
+    setGeneratingIndex(-1)
   }
 
   const playFrom = (index) => {
@@ -71,14 +86,12 @@ export default function Home() {
       const isNarrator = NARRATOR_SPEAKERS.includes(block.speaker.toLowerCase().trim())
       const hasMoment = block.momentAudio || block.moment2Audio
 
-      // Voice
       if (block.audio && voiceRef.current) {
         voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
         voiceRef.current.volume = hasMoment ? 0.7 : 1.0
         voiceRef.current.play()
       }
 
-      // Background ambience
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
@@ -91,7 +104,6 @@ export default function Home() {
         }
       }
 
-      // Background ambience 2
       if (ambience2Ref.current) {
         if (block.ambience2Audio) {
           ambience2Ref.current.src = `data:audio/mpeg;base64,${block.ambience2Audio}`
@@ -104,7 +116,6 @@ export default function Home() {
         }
       }
 
-      // Moment sound 1
       if (momentRef.current) {
         if (block.momentAudio) {
           momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
@@ -117,7 +128,6 @@ export default function Home() {
         }
       }
 
-      // Moment sound 2
       if (moment2Ref.current) {
         if (block.moment2Audio) {
           moment2Ref.current.src = `data:audio/mpeg;base64,${block.moment2Audio}`
@@ -130,7 +140,6 @@ export default function Home() {
         }
       }
 
-      // Music — lower volume for characters, higher for narrator
       if (musicRef.current) {
         if (block.musicAudio) {
           const newSrc = `data:audio/mpeg;base64,${block.musicAudio}`
@@ -155,7 +164,6 @@ export default function Home() {
     const totalPause = Math.max(pauseAfter, momentPause)
 
     if (totalPause > 0) {
-      // During pause swell ambience and music up
       if (ambienceRef.current && current?.ambienceAudio) {
         ambienceRef.current.volume = 0.6
       }
@@ -206,7 +214,7 @@ export default function Home() {
             cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? 'Generating...' : 'Play Pride and Prejudice'}
+          {loading ? `Generating block ${generatingIndex + 1}...` : 'Play Pride and Prejudice'}
         </button>
 
         {blocks.length > 0 && !loading && (
@@ -222,14 +230,14 @@ export default function Home() {
         )}
       </div>
 
-      {loading && (
+      {loading && blocks.length === 0 && (
         <div style={{
           background: '#111', border: '1px solid #333', borderRadius: '10px',
           padding: '2rem', textAlign: 'center', color: '#888'
         }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎭</div>
           <p>Generating voices and ambient sounds...</p>
-          <p style={{ fontSize: '12px', marginTop: '8px' }}>This takes about 30 seconds</p>
+          <p style={{ fontSize: '12px', marginTop: '8px' }}>Blocks will appear as they generate</p>
         </div>
       )}
 
@@ -241,11 +249,13 @@ export default function Home() {
             background: currentBlock === i ? '#1a0a0a' : '#111',
             border: currentBlock === i ? '1px solid #8B0000' : '1px solid #333',
             borderRadius: '10px', padding: '1.25rem', marginBottom: '1rem',
-            cursor: 'pointer', transition: 'all 0.2s'
+            cursor: 'pointer', transition: 'all 0.2s',
+            opacity: loading && generatingIndex === i ? 0.6 : 1
           }}
         >
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             {currentBlock === i && <span style={{ fontSize: '16px' }}>🔊</span>}
+            {loading && generatingIndex === i && <span style={{ fontSize: '11px', color: '#888' }}>⏳ generating...</span>}
             <span style={{ background: '#8B0000', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.speaker}
             </span>
