@@ -44,7 +44,7 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
       messages: [
         {
           role: 'system',
-          content: `You are an audio drama sound designer. Return a JSON object with five fields:
+          content: `You are an audio drama sound designer. Return a JSON object with six fields:
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
 - "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules in strict priority order:
@@ -58,7 +58,8 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
-- "pause_after": a pause duration in milliseconds to add after this line. Use 1800 for awkward silences (e.g. a character ignores someone, makes no answer, or the scene calls for a dramatic beat). Use 0 for all other lines.The setting drives background and music sounds. The line and speaker context drive moment sounds.
+- "pause_after": a pause duration in milliseconds. Use 1800 if the line describes a character ignoring someone, making no answer, or there is a dramatic silence moment. Use 0 for all other lines.
+The setting drives background and music sounds. The line and speaker context drive moment sounds.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
@@ -84,12 +85,13 @@ Previous speaker: ${previousSpeaker || 'none'}`
       moment1: momentSounds[parsed.moment1] ? parsed.moment1 : null,
       moment2: momentSounds[parsed.moment2] ? parsed.moment2 : null,
       music: musicTracks[parsed.music] ? parsed.music : null,
+      pause_after: parsed.pause_after || 0,
       noMatch: !backgroundSounds[parsed.background1],
       suggestion: parsed.suggestion || null
     }
   } catch (e) {
     console.error('JSON parse error:', e.message, 'Raw text:', text)
-    return { background1: null, background2: null, moment1: null, moment2: null, music: null, noMatch: true, suggestion: null }
+    return { background1: null, background2: null, moment1: null, moment2: null, music: null, pause_after: 0, noMatch: true, suggestion: null }
   }
 }
 
@@ -145,6 +147,7 @@ export async function POST(request) {
       momentAudio,
       moment2Audio,
       musicAudio,
+      pause_after: picked.pause_after,
       noMatch: picked.noMatch,
       suggestion: picked.suggestion
     })
