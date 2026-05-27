@@ -133,7 +133,6 @@ export default function Home() {
       // Music — lower volume for characters, higher for narrator
       if (musicRef.current) {
         if (block.musicAudio) {
-          // Only set src if it changed
           const newSrc = `data:audio/mpeg;base64,${block.musicAudio}`
           if (musicRef.current.src !== newSrc) {
             musicRef.current.src = newSrc
@@ -151,10 +150,21 @@ export default function Home() {
 
   const handleVoiceEnd = () => {
     const current = blocks[currentBlock]
-    if (current && (current.momentAudio || current.moment2Audio)) {
+    const pauseAfter = current?.pause_after || 0
+    const momentPause = (current?.momentAudio || current?.moment2Audio) ? 3000 : 0
+    const totalPause = Math.max(pauseAfter, momentPause)
+
+    if (totalPause > 0) {
+      // During pause swell ambience and music up
+      if (ambienceRef.current && current?.ambienceAudio) {
+        ambienceRef.current.volume = 0.6
+      }
+      if (musicRef.current && current?.musicAudio) {
+        musicRef.current.volume = 0.5
+      }
       setTimeout(() => {
         playFrom(currentBlock + 1)
-      }, 3000)
+      }, totalPause)
     } else {
       playFrom(currentBlock + 1)
     }
