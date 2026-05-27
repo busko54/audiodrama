@@ -40,23 +40,23 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 150,
+      max_tokens: 200,
       messages: [
         {
           role: 'system',
           content: `You are an audio drama sound designer. Return a JSON object with five fields:
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
-- "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules:
-  * If the line mentions a horse, carriage, or riding — return "horse carriage" as moment1 AND "horse neighing" as moment2
+- "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules in strict priority order:
+  * HIGHEST PRIORITY: If the line mentions a horse, carriage, chaise, or riding — return "horse carriage" as moment1 AND "horse neighing" as moment2. Ignore all other moment rules.
   * If the line mentions a door opening or closing — return "door creaking"
   * If the line mentions footsteps or walking — return "footsteps"
   * If the line mentions church bells or a church — return "church bells"
   * If the line mentions lightning or a lightning strike — return "lightning"
-  * If a female character is speaking and the previous speaker was a narrator — return "dress rustle" to indicate her entering or turning
+  * If a female character is speaking and the previous speaker was a narrator AND the line does not mention a horse or carriage — return "dress rustle"
   * If a narrator line describes a male character ignoring someone, making no answer, or sitting quietly — return "teacup clink"
   * Otherwise return null
-- "moment2": a second one-shot sound from the same list, or null. Only use if two distinct moment sounds apply. If the line mentions a horse AND a female character just entered, return both.
+- "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
 The setting drives background and music sounds. The line and speaker context drive moment sounds.
 Return ONLY valid JSON. No markdown. No backticks.`
