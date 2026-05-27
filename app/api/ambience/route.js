@@ -24,7 +24,7 @@ const momentSounds = {
 }
 
 const musicTracks = {
-  'regency classical piano': '727792',
+  'regency classical piano': '826247',
 }
 
 async function pickSounds(setting, line, speaker, previousSpeaker) {
