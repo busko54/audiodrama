@@ -173,13 +173,16 @@ export default function Home() {
         }
       }
 
+      // Music — now uses file path instead of base64
       if (musicRef.current) {
-        if (block.musicAudio) {
-          const newSrc = `data:audio/mpeg;base64,${block.musicAudio}`
-          if (!musicRef.current.src || musicRef.current.src === '' || musicRef.current.paused) {
-            musicRef.current.src = newSrc
+        if (block.musicTrack) {
+          if (musicRef.current.getAttribute('data-track') !== block.musicTrack) {
+            musicRef.current.src = block.musicTrack
+            musicRef.current.setAttribute('data-track', block.musicTrack)
             musicRef.current.loop = true
             musicRef.current.play().catch(err => console.error('Music play error:', err))
+          } else if (musicRef.current.paused) {
+            musicRef.current.play().catch(err => console.error('Music resume error:', err))
           }
           musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
         } else {
@@ -199,7 +202,7 @@ export default function Home() {
       if (ambienceRef.current && current?.ambienceAudio) {
         ambienceRef.current.volume = 0.6
       }
-      if (musicRef.current && current?.musicAudio) {
+      if (musicRef.current && current?.musicTrack) {
         musicRef.current.volume = 0.5
       }
       pauseTimeoutRef.current = setTimeout(() => {
@@ -307,9 +310,9 @@ export default function Home() {
                 🎵 ambience 2
               </span>
             )}
-            {block.musicAudio && (
+            {block.musicTrack && (
               <span style={{ background: '#1a1a2d', color: '#a78bfa', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
-                🎼 music
+                🎼 {block.musicTrack.includes('dramatic') ? 'tense' : block.musicTrack.includes('romantic') ? 'romantic' : 'light'}
               </span>
             )}
             {block.momentAudio && (
