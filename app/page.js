@@ -16,6 +16,38 @@ export default function Home() {
   const momentRef = useRef(null)
   const moment2Ref = useRef(null)
   const musicRef = useRef(null)
+  const pauseTimeoutRef = useRef(null)
+
+  const pauseAllAudio = () => {
+    if (voiceRef.current) voiceRef.current.pause()
+    if (ambienceRef.current) ambienceRef.current.pause()
+    if (ambience2Ref.current) ambience2Ref.current.pause()
+    if (momentRef.current) momentRef.current.pause()
+    if (moment2Ref.current) moment2Ref.current.pause()
+    if (musicRef.current) musicRef.current.pause()
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current)
+  }
+
+  const resumeAllAudio = () => {
+    if (voiceRef.current && voiceRef.current.src) voiceRef.current.play().catch(() => {})
+    if (ambienceRef.current && ambienceRef.current.src) ambienceRef.current.play().catch(() => {})
+    if (ambience2Ref.current && ambience2Ref.current.src) ambience2Ref.current.play().catch(() => {})
+    if (musicRef.current && musicRef.current.src) musicRef.current.play().catch(() => {})
+  }
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      pauseAllAudio()
+      setIsPlaying(false)
+    } else {
+      if (currentBlock >= 0) {
+        resumeAllAudio()
+        setIsPlaying(true)
+      } else {
+        playFrom(0)
+      }
+    }
+  }
 
   const runFullTest = async () => {
     setLoading(true)
@@ -23,6 +55,7 @@ export default function Home() {
     setCurrentBlock(-1)
     setIsPlaying(false)
     setGeneratingIndex(-1)
+    pauseAllAudio()
 
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
@@ -81,7 +114,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (currentBlock >= 0 && blocks[currentBlock]) {
+    if (currentBlock >= 0 && blocks[currentBlock] && isPlaying) {
       const block = blocks[currentBlock]
       const isNarrator = NARRATOR_SPEAKERS.includes(block.speaker.toLowerCase().trim())
       const hasMoment = block.momentAudio || block.moment2Audio
@@ -143,35 +176,35 @@ export default function Home() {
       if (musicRef.current) {
         if (block.musicAudio) {
           const newSrc = `data:audio/mpeg;base64,${block.musicAudio}`
-if (!musicRef.current.src || musicRef.current.src === '' || musicRef.current.paused) {
-  musicRef.current.src = newSrc
-  musicRef.current.loop = true
-  musicRef.current.play().catch(err => console.error('Music play error:', err))
-}
-musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
+          if (!musicRef.current.src || musicRef.current.src === '' || musicRef.current.paused) {
+            musicRef.current.src = newSrc
+            musicRef.current.loop = true
+            musicRef.current.play().catch(err => console.error('Music play error:', err))
+          }
+          musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
         } else {
           musicRef.current.pause()
           musicRef.current.src = ''
         }
       }
     }
-  }, [currentBlock, blocks])
+  }, [currentBlock, blocks, isPlaying])
 
   const handleVoiceEnd = () => {
-  const current = blocks[currentBlock]
-  const pauseAfter = current?.pause_after || 0
-  const totalPause = pauseAfter
+    if (!isPlaying) return
+    const current = blocks[currentBlock]
+    const pauseAfter = current?.pause_after || 0
 
-    if (totalPause > 0) {
+    if (pauseAfter > 0) {
       if (ambienceRef.current && current?.ambienceAudio) {
         ambienceRef.current.volume = 0.6
       }
       if (musicRef.current && current?.musicAudio) {
         musicRef.current.volume = 0.5
       }
-      setTimeout(() => {
+      pauseTimeoutRef.current = setTimeout(() => {
         playFrom(currentBlock + 1)
-      }, totalPause)
+      }, pauseAfter)
     } else {
       playFrom(currentBlock + 1)
     }
@@ -187,7 +220,7 @@ musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
       maxWidth: '800px',
       margin: '0 auto'
     }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎭 AudioDrama</h1>
+      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎭 Narratescape</h1>
       <p style={{ color: '#888', marginBottom: '0.5rem' }}>Pride and Prejudice — Chapter I</p>
 
       {fromCache && (
@@ -213,12 +246,12 @@ musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
             cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1
           }}
         >
-          {loading ? `Generating block ${generatingIndex + 1}...` : 'Play Pride and Prejudice'}
+          {loading ? `Generating block ${generatingIndex + 1}...` : 'Generate'}
         </button>
 
         {blocks.length > 0 && !loading && (
           <button
-            onClick={() => isPlaying ? setIsPlaying(false) : playFrom(0)}
+            onClick={handlePlayPause}
             style={{
               background: '#1a5c2e', color: '#fff', border: 'none',
               padding: '14px 28px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer'
@@ -243,7 +276,7 @@ musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
       {blocks && blocks.length > 0 && blocks.map((block, i) => (
         <div
           key={i}
-          onClick={() => playFrom(i)}
+          onClick={() => { setIsPlaying(true); playFrom(i) }}
           style={{
             background: currentBlock === i ? '#1a0a0a' : '#111',
             border: currentBlock === i ? '1px solid #8B0000' : '1px solid #333',
@@ -253,7 +286,7 @@ musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
           }}
         >
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {currentBlock === i && <span style={{ fontSize: '16px' }}>🔊</span>}
+            {currentBlock === i && isPlaying && <span style={{ fontSize: '16px' }}>🔊</span>}
             {loading && generatingIndex === i && <span style={{ fontSize: '11px', color: '#888' }}>⏳ generating...</span>}
             <span style={{ background: '#8B0000', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.speaker}
