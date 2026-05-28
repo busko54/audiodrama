@@ -1,78 +1,126 @@
 {
-  "setting": "English countryside drawing room, daytime, refined and quiet",
-  "blocks": [
-    {
-      "speaker": "pp_narrator",
-      "line": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
-      "tone": "solemn",
-      "emotion": "neutral"
-    },
-    {
-      "speaker": "pp_narrator",
-      "line": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.",
-      "tone": "sarcastic",
-      "emotion": "amused"
-    },
-    {
-      "speaker": "mrs bennet",
-      "line": "My dear Mr. Bennet, have you heard that Netherfield Park is let at last?",
-      "tone": "excited",
-      "emotion": "excited"
-    },
-    {
-      "speaker": "pp_narrator",
-      "line": "Mr. Bennet replied that he had not.",
-      "tone": "normal",
-      "emotion": "neutral"
-    },
-    {
-      "speaker": "mrs bennet",
-      "line": "But it is; for Mrs. Long has just been here, and she told me all about it.",
-      "tone": "excited",
-      "emotion": "curious"
-    },
-   {
-  "speaker": "pp_narrator",
-  "line": "Mr. Bennet made no answer.",
-  "tone": "normal",
-  "emotion": "dismissive",
-  "pause_after": 1800
+  "speaker": "mrs bennet",
+  "line": "What is his name?",
+  "tone": "curious",
+  "emotion": "curious"
 },
-    {
-      "speaker": "mrs bennet",
-      "line": "Do you not want to know who has taken it?",
-      "tone": "frantic",
-      "emotion": "irritated"
-    },
-    {
-      "speaker": "mr bennet",
-      "line": "YOU want to tell me, and I have no objection to hearing it.",
-      "tone": "sarcastic",
-      "emotion": "amused"
-    },
-    {
-      "speaker": "pp_narrator",
-      "line": "This was invitation enough.",
-      "tone": "warm",
-      "emotion": "amused"
-    },
-    {
-      "speaker": "mrs bennet",
-      "line": "Why, my dear, you must know —",
-      "tone": "excited",
-      "emotion": "excited"
-    },
-    {
-      "speaker": "pp_narrator",
-      "line": "Mrs. Long had told her:",
-      "tone": "normal",
-      "emotion": "neutral"
-    },
-    {
-      "speaker": "mrs bennet",
-      "line": "Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.",
-      "tone": "excited",
-      "emotion": "excited"
-    }
-  ]
+{
+  "speaker": "mr bennet",
+  "line": "Bingley.",
+  "tone": "normal",
+  "emotion": "neutral"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "Is he married or single? Oh! Single, my dear, to be sure! A single man of large fortune; four or five thousand a year. What a fine thing for our girls!",
+  "tone": "excited",
+  "emotion": "excited"
+},
+{
+  "speaker": "mr bennet",
+  "line": "How so? How can it affect them?",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "pp_narrator",
+  "line": "His wife replied:",
+  "tone": "normal",
+  "emotion": "neutral"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "My dear Mr. Bennet, how can you be so tiresome! You must know that I am thinking of his marrying one of them.",
+  "tone": "sarcastic",
+  "emotion": "irritated"
+},
+{
+  "speaker": "mr bennet",
+  "line": "Is that his design in settling here?",
+  "tone": "normal",
+  "emotion": "curious"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "Design! Nonsense, how can you talk so! But it is very likely that he MAY fall in love with one of them, and therefore you must visit him as soon as he comes.",
+  "tone": "frantic",
+  "emotion": "anxious"
+},
+{
+  "speaker": "mr bennet",
+  "line": "I see no occasion for that. You and the girls may go, or you may send them by themselves, which perhaps will be still better, for as you are as handsome as any of them, Mr. Bingley may like you the best of the party.",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "My dear, you flatter me. I certainly HAVE had my share of beauty, but I do not pretend to be anything extraordinary now. When a woman has five grown-up daughters, she ought to give over thinking of her own beauty.",
+  "tone": "normal",
+  "emotion": "dismissive"
+},
+{
+  "speaker": "mr bennet",
+  "line": "In such cases, a woman has not often much beauty to think of.",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "But, my dear, you must indeed go and see Mr. Bingley when he comes into the neighbourhood.",
+  "tone": "pleading",
+  "emotion": "anxious"
+},
+{
+  "speaker": "mr bennet",
+  "line": "It is more than I engage for, I assure you.",
+  "tone": "normal",
+  "emotion": "dismissive"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "But consider your daughters. Only think what an establishment it would be for one of them. Sir William and Lady Lucas are determined to go, merely on that account, for in general, you know, they visit no newcomers. Indeed you must go, for it will be impossible for US to visit him if you do not.",
+  "tone": "frantic",
+  "emotion": "desperate"
+},
+{
+  "speaker": "mr bennet",
+  "line": "You are over-scrupulous, surely. I dare say Mr. Bingley will be very glad to see you; and I will send a few lines by you to assure him of my hearty consent to his marrying whichever he chooses of the girls; though I must throw in a good word for my little Lizzy.",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "I desire you will do no such thing. Lizzy is not a bit better than the others; and I am sure she is not half so handsome as Jane, nor half so good-humoured as Lydia. But you are always giving HER the preference.",
+  "tone": "frantic",
+  "emotion": "irritated"
+},
+{
+  "speaker": "mr bennet",
+  "line": "They have none of them much to recommend them. They are all silly and ignorant like other girls; but Lizzy has something more of quickness than her sisters.",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "mrs bennet",
+  "line": "Mr. Bennet, how CAN you abuse your own children in such a way? You take delight in vexing me. You have no compassion for my poor nerves.",
+  "tone": "frantic",
+  "emotion": "irritated"
+},
+{
+  "speaker": "mr bennet",
+  "line": "You mistake me, my dear. I have a high respect for your nerves. They are my old friends. I have heard you mention them with consideration these last twenty years at least.",
+  "tone": "sarcastic",
+  "emotion": "amused"
+},
+{
+  "speaker": "pp_narrator",
+  "line": "Mr. Bennet was so odd a mixture of quick parts, sarcastic humour, reserve, and caprice, that the experience of three-and-twenty years had been insufficient to make his wife understand his character.",
+  "tone": "normal",
+  "emotion": "neutral"
+},
+{
+  "speaker": "pp_narrator",
+  "line": "Her mind was less difficult to develop. She was a woman of mean understanding, little information, and uncertain temper. When she was discontented, she fancied herself nervous. The business of her life was to get her daughters married; its solace was visiting and news.",
+  "tone": "normal",
+  "emotion": "neutral"
 }
