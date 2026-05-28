@@ -1,9 +1,7 @@
-
 'use client'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 export default function LandingPage() {
-  const [demoPlaying, setDemoPlaying] = useState(false)
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
@@ -212,17 +210,37 @@ export default function LandingPage() {
           gap: '1.5rem'
         }}>
           {[
-            { title: 'Pride and Prejudice', author: 'Jane Austen', available: true, emoji: '📖' },
-            { title: 'Dracula', author: 'Bram Stoker', available: false, emoji: '🧛' },
-            { title: 'Frankenstein', author: 'Mary Shelley', available: false, emoji: '⚡' },
-            { title: 'Sherlock Holmes', author: 'Arthur Conan Doyle', available: false, emoji: '🔍' },
+            {
+              title: 'Pride and Prejudice',
+              author: 'Jane Austen',
+              available: true,
+              image: 'https://m.media-amazon.com/images/I/518cCpQ5lbL._SY445_SX342_FMwebp_.jpg'
+            },
+            {
+              title: 'Dracula',
+              author: 'Bram Stoker',
+              available: false,
+              image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg'
+            },
+            {
+              title: 'Frankenstein',
+              author: 'Mary Shelley',
+              available: false,
+              image: 'https://cloud.firebrandtech.com/api/v2/image/111/9780785839880/CoverArtHigh/XL'
+            },
+            {
+              title: 'Sherlock Holmes',
+              author: 'Arthur Conan Doyle',
+              available: false,
+              image: 'https://m.media-amazon.com/images/I/51ZlozSSZ4L._SY445_SX342_FMwebp_.jpg'
+            },
           ].map((book, i) => (
             <div key={i} style={{
               background: '#111',
               border: `1px solid ${book.available ? '#8B0000' : '#222'}`,
               borderRadius: '12px',
-              padding: '1.5rem',
-              opacity: book.available ? 1 : 0.5,
+              overflow: 'hidden',
+              opacity: book.available ? 1 : 0.6,
               position: 'relative'
             }}>
               {!book.available && (
@@ -230,25 +248,36 @@ export default function LandingPage() {
                   position: 'absolute', top: '12px', right: '12px',
                   background: '#222', color: '#666', fontSize: '10px',
                   padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace',
-                  letterSpacing: '1px'
+                  letterSpacing: '1px', zIndex: 1
                 }}>
                   COMING SOON
                 </div>
               )}
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{book.emoji}</div>
-              <h3 style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{book.title}</h3>
-              <p style={{ color: '#666', fontSize: '13px', marginBottom: '1rem' }}>{book.author}</p>
-              {book.available ? (
-                <a href="/play" style={{
-                  background: '#8B0000', color: '#fff',
-                  padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
-                  textDecoration: 'none', display: 'inline-block', fontFamily: 'Georgia, serif'
-                }}>
-                  Listen Free →
-                </a>
-              ) : (
-                <span style={{ color: '#444', fontSize: '13px' }}>Available soon</span>
-              )}
+              <img
+                src={book.image}
+                alt={book.title}
+                style={{
+                  width: '100%',
+                  height: '280px',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
+              <div style={{ padding: '1rem' }}>
+                <h3 style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{book.title}</h3>
+                <p style={{ color: '#666', fontSize: '13px', marginBottom: '1rem' }}>{book.author}</p>
+                {book.available ? (
+                  <a href="/play" style={{
+                    background: '#8B0000', color: '#fff',
+                    padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+                    textDecoration: 'none', display: 'inline-block', fontFamily: 'Georgia, serif'
+                  }}>
+                    Listen Free →
+                  </a>
+                ) : (
+                  <span style={{ color: '#444', fontSize: '13px' }}>Available soon</span>
+                )}
+              </div>
             </div>
           ))}
         </div>
