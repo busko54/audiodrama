@@ -23,7 +23,9 @@ const momentSounds = {
 }
 
 const musicTracks = {
-  'regency classical piano': '826247',
+  'regency-light': '/music/light_normal.mp3',
+  'regency-tense': '/music/dramatic.mp3',
+  'regency-romantic': '/music/romantic.mp3',
 }
 
 async function pickSounds(setting, line, speaker, previousSpeaker) {
@@ -53,11 +55,16 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * If the line mentions church bells or a church — return "church bells"
   * If the line mentions lightning or a lightning strike — return "lightning"
   * If a female character is speaking and the previous speaker was a narrator AND the line does not mention a horse or carriage — return "dress rustle"
+  * If a narrator line contains the exact phrase "no answer" or "made no answer" — return null
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
-- "music": the best background music track for the SETTING from this list: ${musicKeys}. Pick the closest match. If nothing fits return null.
+- "music": the best background music track for the mood of this scene from this list: ${musicKeys}. Use these rules:
+  * If the scene is an argument, someone is frantic, desperate, or irritated — return "regency-tense"
+  * If the scene is warm, romantic, emotional, or tender — return "regency-romantic"
+  * For all other scenes — return "regency-light"
+  * You MUST always return a value here, never null.
 - "pause_after": a pause duration in milliseconds. Use 1800 if the line describes a character ignoring someone, making no answer, or there is a dramatic silence moment. Use 0 for all other lines.
-The setting drives background and music sounds. The line and speaker context drive moment sounds.
+The setting drives background sounds. The line, tone, emotion and speaker context drive moment sounds and music.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
@@ -82,14 +89,14 @@ Previous speaker: ${previousSpeaker || 'none'}`
       background2: backgroundSounds[parsed.background2] ? parsed.background2 : null,
       moment1: momentSounds[parsed.moment1] ? parsed.moment1 : null,
       moment2: momentSounds[parsed.moment2] ? parsed.moment2 : null,
-      music: musicTracks[parsed.music] ? parsed.music : null,
+      music: musicTracks[parsed.music] ? parsed.music : 'regency-light',
       pause_after: parsed.pause_after || 0,
       noMatch: !backgroundSounds[parsed.background1],
       suggestion: parsed.suggestion || null
     }
   } catch (e) {
     console.error('JSON parse error:', e.message, 'Raw text:', text)
-    return { background1: null, background2: null, moment1: null, moment2: null, music: null, pause_after: 0, noMatch: true, suggestion: null }
+    return { background1: null, background2: null, moment1: null, moment2: null, music: 'regency-light', pause_after: 0, noMatch: true, suggestion: null }
   }
 }
 
@@ -131,12 +138,11 @@ export async function POST(request) {
 
     const picked = await pickSounds(setting, line, speaker, previousSpeaker)
 
-    const [audio, audio2, momentAudio, moment2Audio, musicAudio] = await Promise.all([
+    const [audio, audio2, momentAudio, moment2Audio] = await Promise.all([
       picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
       picked.background2 ? fetchFreesound(backgroundSounds[picked.background2]) : Promise.resolve(null),
       picked.moment1 ? fetchFreesound(momentSounds[picked.moment1]) : Promise.resolve(null),
       picked.moment2 ? fetchFreesound(momentSounds[picked.moment2]) : Promise.resolve(null),
-      picked.music ? fetchFreesound(musicTracks[picked.music]) : Promise.resolve(null),
     ])
 
     return Response.json({
@@ -144,7 +150,7 @@ export async function POST(request) {
       audio2,
       momentAudio,
       moment2Audio,
-      musicAudio,
+      musicTrack: musicTracks[picked.music],
       pause_after: picked.pause_after,
       noMatch: picked.noMatch,
       suggestion: picked.suggestion
