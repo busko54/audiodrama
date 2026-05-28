@@ -119,7 +119,7 @@ export async function POST(request) {
         ambience2Audio: ambienceData.audio2 || null,
         momentAudio: ambienceData.momentAudio || null,
         moment2Audio: ambienceData.moment2Audio || null,
-        musicAudio: ambienceData.musicAudio || null,
+        musicTrack: ambienceData.musicTrack || '/music/light_normal.mp3',
         ambience_volume: 0.3,
         ambience2_volume: 0.3,
         moment_volume: 0.9,
