@@ -59,8 +59,9 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": the best background music track for the mood of this scene from this list: ${musicKeys}. Use these rules:
-  * If the scene is an argument, someone is frantic, desperate, or irritated — return "regency-tense"
-  * If the scene is warm, romantic, emotional, or tender — return "regency-romantic"
+  * If the emotion is irritated, desperate, terrified, horrified, or fearful — return "regency-tense"
+  * If the tone is frantic or shout — return "regency-tense"
+  * If the emotion is warm or awestruck AND the tone is warm or solemn — return "regency-romantic"
   * For all other scenes — return "regency-light"
   * You MUST always return a value here, never null.
 - "pause_after": a pause duration in milliseconds. Use 1800 if the line describes a character ignoring someone, making no answer, or there is a dramatic silence moment. Use 0 for all other lines.
