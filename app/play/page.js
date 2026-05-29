@@ -174,17 +174,41 @@ export default function Home() {
       }
 
       // Music — now uses file path instead of base64
+     // Music — crossfade between tracks
       if (musicRef.current) {
         if (block.musicTrack) {
           if (musicRef.current.getAttribute('data-track') !== block.musicTrack) {
-            musicRef.current.src = block.musicTrack
-            musicRef.current.setAttribute('data-track', block.musicTrack)
-            musicRef.current.loop = true
-            musicRef.current.play().catch(err => console.error('Music play error:', err))
+            // Fade out current track
+            const fadeOut = setInterval(() => {
+              if (musicRef.current && musicRef.current.volume > 0.02) {
+                musicRef.current.volume = Math.max(0, musicRef.current.volume - 0.05)
+              } else {
+                clearInterval(fadeOut)
+                if (musicRef.current) {
+                  musicRef.current.src = block.musicTrack
+                  musicRef.current.setAttribute('data-track', block.musicTrack)
+                  musicRef.current.loop = true
+                  musicRef.current.play().catch(() => {})
+                  // Fade in new track
+                  const targetVol = hasMoment ? 0.05 : isNarrator ? 0.4 : 0.25
+                  musicRef.current.volume = 0
+                  const fadeIn = setInterval(() => {
+                    if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
+                      musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
+                    } else {
+                      clearInterval(fadeIn)
+                      if (musicRef.current) musicRef.current.volume = targetVol
+                    }
+                  }, 50)
+                }
+              }
+            }, 50)
           } else if (musicRef.current.paused) {
-            musicRef.current.play().catch(err => console.error('Music resume error:', err))
+            musicRef.current.play().catch(() => {})
           }
-          musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.3 : 0.15
+          if (musicRef.current.getAttribute('data-track') === block.musicTrack) {
+            musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.4 : 0.25
+          }
         } else {
           musicRef.current.pause()
           musicRef.current.src = ''
