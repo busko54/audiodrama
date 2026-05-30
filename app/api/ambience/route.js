@@ -28,7 +28,7 @@ const musicTracks = {
   'regency-romantic': '/music/romantic.mp3',
 }
 
-async function pickSounds(setting, line, speaker, previousSpeaker) {
+async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion) {
   const backgroundKeys = Object.keys(backgroundSounds).join(', ')
   const momentKeys = Object.keys(momentSounds).join(', ')
   const musicKeys = Object.keys(musicTracks).join(', ')
@@ -58,14 +58,14 @@ async function pickSounds(setting, line, speaker, previousSpeaker) {
   * If a narrator line contains the exact phrase "no answer" or "made no answer" — return null
   * Otherwise return null
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
-- "music": the best background music track for the mood of this scene from this list: ${musicKeys}. Use these rules:
-  * If the emotion is irritated, desperate, terrified, horrified, or fearful — return "regency-tense"
-  * If the tone is frantic or shout — return "regency-tense"
-  * If the emotion is warm or awestruck AND the tone is warm or solemn — return "regency-romantic"
-  * For all other scenes — return "regency-light"
-  * You MUST always return a value here, never null.
+- "music": choose from this list: ${musicKeys}. Use the tone and emotion fields to decide:
+  * tone is "frantic" OR tone is "shout" OR emotion is "irritated" OR emotion is "desperate" OR emotion is "terrified" OR emotion is "fearful" OR emotion is "horrified" — return "regency-tense"
+  * tone is "pleading" OR emotion is "anxious" — return "regency-tense"
+  * tone is "warm" OR emotion is "warm" OR emotion is "awestruck" — return "regency-romantic"
+  * all other tones and emotions — return "regency-light"
+  * NEVER return null
 - "pause_after": a pause duration in milliseconds. Use 1800 if the line describes a character ignoring someone, making no answer, or there is a dramatic silence moment. Use 0 for all other lines.
-The setting drives background sounds. The line, tone, emotion and speaker context drive moment sounds and music.
+The setting drives background sounds. The tone and emotion fields directly determine the music choice.
 Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
@@ -73,7 +73,9 @@ Return ONLY valid JSON. No markdown. No backticks.`
           content: `Setting: ${setting}
 Line: ${line}
 Speaker: ${speaker}
-Previous speaker: ${previousSpeaker || 'none'}`
+Previous speaker: ${previousSpeaker || 'none'}
+Tone: ${tone || 'normal'}
+Emotion: ${emotion || 'neutral'}`
         }
       ]
     })
@@ -135,9 +137,9 @@ async function fetchFreesound(soundId) {
 
 export async function POST(request) {
   try {
-    const { setting, line, speaker, previousSpeaker } = await request.json()
+    const { setting, line, speaker, previousSpeaker, tone, emotion } = await request.json()
 
-    const picked = await pickSounds(setting, line, speaker, previousSpeaker)
+    const picked = await pickSounds(setting, line, speaker, previousSpeaker, tone, emotion)
 
     const [audio, audio2, momentAudio, moment2Audio] = await Promise.all([
       picked.background1 ? fetchFreesound(backgroundSounds[picked.background1]) : Promise.resolve(null),
