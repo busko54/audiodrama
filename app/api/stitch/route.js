@@ -102,7 +102,9 @@ export async function POST(request) {
           setting,
           line: block.line,
           speaker: block.speaker,
-          previousSpeaker: prevSpeaker
+          previousSpeaker: prevSpeaker,
+          tone: block.tone,
+          emotion: block.emotion
         })
       })
 
