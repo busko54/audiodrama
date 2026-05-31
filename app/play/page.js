@@ -17,6 +17,8 @@ export default function Home() {
   const moment2Ref = useRef(null)
   const musicRef = useRef(null)
   const pauseTimeoutRef = useRef(null)
+  const musicTrackCountRef = useRef({ track: null, count: 0 })
+  const activeMusicTrackRef = useRef(null)
 
   const pauseAllAudio = () => {
     if (voiceRef.current) voiceRef.current.pause()
@@ -56,6 +58,8 @@ export default function Home() {
     setIsPlaying(false)
     setGeneratingIndex(-1)
     pauseAllAudio()
+    activeMusicTrackRef.current = null
+    musicTrackCountRef.current = { track: null, count: 0 }
 
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
@@ -173,24 +177,48 @@ export default function Home() {
         }
       }
 
-      // Music — now uses file path instead of base64
-     // Music — crossfade between tracks
+      // Music — only switch after 3 consecutive blocks with same new track
       if (musicRef.current) {
-        if (block.musicTrack) {
-          if (musicRef.current.getAttribute('data-track') !== block.musicTrack) {
-            // Fade out current track
+        const newTrack = block.musicTrack || '/music/light_normal.mp3'
+        const targetVol = hasMoment ? 0.05 : isNarrator ? 0.6 : 0.45
+
+        if (!activeMusicTrackRef.current) {
+          // First block — start music immediately
+          activeMusicTrackRef.current = newTrack
+          musicTrackCountRef.current = { track: newTrack, count: 0 }
+          musicRef.current.src = newTrack
+          musicRef.current.loop = true
+          musicRef.current.volume = 0
+          musicRef.current.play().catch(() => {})
+          const fadeIn = setInterval(() => {
+            if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
+              musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
+            } else {
+              clearInterval(fadeIn)
+              if (musicRef.current) musicRef.current.volume = targetVol
+            }
+          }, 50)
+        } else if (newTrack !== activeMusicTrackRef.current) {
+          // Track wants to change — count consecutive blocks
+          if (musicTrackCountRef.current.track === newTrack) {
+            musicTrackCountRef.current.count += 1
+          } else {
+            musicTrackCountRef.current = { track: newTrack, count: 1 }
+          }
+
+          // Only switch after 3 consecutive blocks requesting new track
+          if (musicTrackCountRef.current.count >= 3) {
+            activeMusicTrackRef.current = newTrack
+            musicTrackCountRef.current = { track: newTrack, count: 0 }
             const fadeOut = setInterval(() => {
               if (musicRef.current && musicRef.current.volume > 0.02) {
                 musicRef.current.volume = Math.max(0, musicRef.current.volume - 0.05)
               } else {
                 clearInterval(fadeOut)
                 if (musicRef.current) {
-                  musicRef.current.src = block.musicTrack
-                  musicRef.current.setAttribute('data-track', block.musicTrack)
+                  musicRef.current.src = newTrack
                   musicRef.current.loop = true
                   musicRef.current.play().catch(() => {})
-                  // Fade in new track
-                  const targetVol = hasMoment ? 0.05 : isNarrator ? 0.4 : 0.25
                   musicRef.current.volume = 0
                   const fadeIn = setInterval(() => {
                     if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
@@ -203,15 +231,16 @@ export default function Home() {
                 }
               }
             }, 50)
-          } else if (musicRef.current.paused) {
-            musicRef.current.play().catch(() => {})
-          }
-          if (musicRef.current.getAttribute('data-track') === block.musicTrack) {
-            musicRef.current.volume = hasMoment ? 0.05 : isNarrator ? 0.4 : 0.25
+          } else {
+            // Keep current track playing, just adjust volume
+            if (musicRef.current.paused) musicRef.current.play().catch(() => {})
+            musicRef.current.volume = targetVol
           }
         } else {
-          musicRef.current.pause()
-          musicRef.current.src = ''
+          // Same track — reset count and keep playing
+          musicTrackCountRef.current = { track: newTrack, count: 0 }
+          if (musicRef.current.paused) musicRef.current.play().catch(() => {})
+          musicRef.current.volume = targetVol
         }
       }
     }
@@ -226,8 +255,8 @@ export default function Home() {
       if (ambienceRef.current && current?.ambienceAudio) {
         ambienceRef.current.volume = 0.6
       }
-      if (musicRef.current && current?.musicTrack) {
-        musicRef.current.volume = 0.5
+      if (musicRef.current) {
+        musicRef.current.volume = 0.7
       }
       pauseTimeoutRef.current = setTimeout(() => {
         playFrom(currentBlock + 1)
@@ -321,9 +350,11 @@ export default function Home() {
             <span style={{ background: '#1a1a1a', color: '#888', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
               {block.tone}
             </span>
-            <span style={{ background: '#1a1a1a', color: '#888', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
-              {block.emotion}
-            </span>
+            {block.emotion !== block.tone && (
+              <span style={{ background: '#1a1a1a', color: '#888', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                {block.emotion}
+              </span>
+            )}
             {block.ambienceAudio && (
               <span style={{ background: '#0d2d1a', color: '#4CAF50', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                 🎵 ambience
