@@ -48,15 +48,15 @@ async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion
           content: `You are an audio drama sound designer. Return a JSON object with six fields:
 - "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
 - "background2": a second optional looping background sound from the same list, or null.
-- "moment1": a one-shot sound effect from this list: ${momentKeys}. Use these rules in strict priority order:
-  * HIGHEST PRIORITY: If the line mentions a horse, carriage, chaise, or riding — return "horse carriage" as moment1 AND "horse neighing" as moment2. Ignore all other moment rules.
-  * If the line mentions a door opening or closing — return "door creaking"
-  * If the line mentions footsteps or walking — return "footsteps"
-  * If the line mentions church bells or a church — return "church bells"
-  * If the line mentions lightning or a lightning strike — return "lightning"
-  * If a female character is speaking and the previous speaker was a narrator AND the line does not mention a horse or carriage — return "dress rustle"
-  * If a narrator line contains the exact phrase "no answer" or "made no answer" — return null
-  * Otherwise return null
+- "moment1": a one-shot sound effect from this list: ${momentKeys}. You are a professional audio drama sound designer. Use your judgment to pick sounds that fit the MEANING and CONTEXT of the line, not just explicit keywords. Think about what a Hollywood sound designer would add to make this scene cinematic. Rules in priority order:
+  * ARRIVALS & TRAVEL: If the line mentions, implies, or references someone arriving, departing, travelling, visiting, or coming to a place in a period setting — return "horse carriage" as moment1 AND "horse neighing" as moment2. This includes: "comes into the neighbourhood", "arrived", "drove up", "coming to stay", "visit him", "settled here", "coming down", "set out", "journey", or any explicit mention of horse, carriage, chaise, or riding.
+  * DOORS & ENTRIES: If the line mentions or implies someone entering a room, a door opening or closing, or someone being shown in — return "door creaking"
+  * MOVEMENT: If the line mentions or implies walking, pacing, approaching, or footsteps — return "footsteps"
+  * CHURCH & CEREMONY: If the line mentions church, bells, wedding, Sunday, prayer, or ceremony — return "church bells"
+  * WEATHER EVENTS: If the line mentions or implies lightning, a strike, a flash, or a storm crack — return "lightning"
+  * CHARACTER ENTRANCES: If a female character is speaking for the first time after a narrator line AND the previous speaker was a narrator — return "dress rustle" to signal her physical presence entering or turning
+  * SILENCE & DISMISSAL: If a narrator line describes a character ignoring someone, making no answer, or sitting in deliberate silence — return null
+  * Use your full reasoning ability. If a sound would obviously enhance this moment based on context, setting, and period — use it. If nothing fits naturally — return null.
 - "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
 - "music": choose from this list: ${musicKeys}. Use the tone and emotion fields to decide:
   * tone is "frantic" OR tone is "shout" OR emotion is "irritated" OR emotion is "desperate" OR emotion is "terrified" OR emotion is "fearful" OR emotion is "horrified" — return "regency-tense"
