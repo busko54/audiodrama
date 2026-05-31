@@ -9,7 +9,6 @@ export default function Home() {
   const [generatingIndex, setGeneratingIndex] = useState(-1)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [mode, setMode] = useState('dev') // 'dev' or 'listen'
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
@@ -223,357 +222,175 @@ export default function Home() {
       .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   }
 
-  const getMusicLabel = (track) => {
-    if (!track) return null
-    if (track.includes('dramatic')) return 'tense'
-    if (track.includes('romantic')) return 'romantic'
-    return 'light'
-  }
-
   const currentBlockData = blocks[currentBlock]
   const isNarratorCurrent = currentBlockData && NARRATOR_SPEAKERS.includes(currentBlockData.speaker?.toLowerCase().trim())
 
-  // LISTEN MODE
-  if (mode === 'listen') {
-    return (
-      <main style={{
-        minHeight: '100vh',
-        background: '#080604',
-        color: '#e8dcc8',
-        fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Atmospheric glow */}
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: currentBlockData
-            ? `radial-gradient(ellipse at 50% 40%, ${getSpeakerColor(currentBlockData.speaker)}11 0%, transparent 60%)`
-            : 'radial-gradient(ellipse at 50% 40%, rgba(180,120,40,0.05) 0%, transparent 60%)',
-          transition: 'background 2s ease',
-          pointerEvents: 'none',
-        }} />
+  return (
+    <main style={{
+      minHeight: '100vh',
+      background: '#080604',
+      color: '#e8dcc8',
+      fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
 
-        {/* Back to dev mode */}
-        <button
-          onClick={() => setMode('dev')}
-          style={{
-            position: 'fixed', top: '1.5rem', left: '1.5rem',
-            background: 'transparent', border: 'none',
-            color: '#3a2510', fontSize: '11px', letterSpacing: '2px',
-            textTransform: 'uppercase', cursor: 'pointer',
-            fontFamily: 'inherit', padding: '8px 12px',
-            transition: 'color 0.3s',
-          }}
-          onMouseEnter={e => e.target.style.color = '#8a6840'}
-          onMouseLeave={e => e.target.style.color = '#3a2510'}
-        >
-          ← Back
-        </button>
+      {/* Atmospheric glow that changes with speaker */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: currentBlockData
+          ? `radial-gradient(ellipse at 50% 40%, ${getSpeakerColor(currentBlockData.speaker)}11 0%, transparent 60%)`
+          : 'radial-gradient(ellipse at 50% 40%, rgba(180,120,40,0.05) 0%, transparent 60%)',
+        transition: 'background 2s ease',
+        pointerEvents: 'none',
+      }} />
 
-        {/* Progress */}
-        {blocks.length > 0 && (
+      {/* Progress bar */}
+      {blocks.length > 0 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
           <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, height: '2px',
-            background: '#1a1008',
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
-              background: 'linear-gradient(to right, #5a3520, #c9a96e)',
-              transition: 'width 0.5s ease',
-            }} />
+            height: '100%',
+            width: `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
+            background: 'linear-gradient(to right, #5a3520, #c9a96e)',
+            transition: 'width 0.5s ease',
+          }} />
+        </div>
+      )}
+
+      <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
+      <audio ref={ambienceRef} loop style={{ display: 'none' }} />
+      <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
+      <audio ref={momentRef} style={{ display: 'none' }} />
+      <audio ref={moment2Ref} style={{ display: 'none' }} />
+      <audio ref={musicRef} loop style={{ display: 'none' }} />
+
+      <div style={{ textAlign: 'center', maxWidth: '640px', padding: '2rem', zIndex: 1, width: '100%' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: '3rem' }}>
+          <div style={{ fontSize: '10px', letterSpacing: '5px', color: '#4a3020', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+            ✦ Narratescape ✦
           </div>
-        )}
-
-        <div style={{ textAlign: 'center', maxWidth: '620px', padding: '2rem', zIndex: 1 }}>
-
-          {/* Book info */}
-          <div style={{ marginBottom: '3rem' }}>
-            <div style={{ fontSize: '10px', letterSpacing: '5px', color: '#4a3020', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-              ✦ Narratescape ✦
-            </div>
-            <div style={{ fontSize: '12px', letterSpacing: '3px', color: '#5a4030', textTransform: 'uppercase' }}>
-              Pride and Prejudice · Chapter I
-            </div>
+          <div style={{ fontSize: '12px', letterSpacing: '3px', color: '#5a4030', textTransform: 'uppercase' }}>
+            Pride and Prejudice · Chapter I
           </div>
+        </div>
 
-          {/* Currently playing */}
-          {currentBlockData ? (
-            <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              {/* Speaker */}
+        {/* Main content area */}
+        <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+
+          {loading && blocks.length === 0 ? (
+            <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
+              The drama is being prepared...
+            </div>
+          ) : currentBlockData ? (
+            <>
+              {/* Speaker name */}
               <div style={{
                 fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase',
                 color: getSpeakerColor(currentBlockData.speaker),
                 marginBottom: '1.5rem',
-                opacity: isPlaying ? 1 : 0.5,
                 transition: 'all 0.5s',
               }}>
                 {isPlaying && <span style={{ marginRight: '8px', animation: 'pulse 1.5s infinite' }}>♪</span>}
                 {formatSpeakerName(currentBlockData.speaker)}
               </div>
 
-              {/* Line */}
+              {/* Line text */}
               <p style={{
-                fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
-                lineHeight: 1.8,
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.45rem)',
+                lineHeight: 1.85,
                 color: '#e8dcc8',
                 fontStyle: isNarratorCurrent ? 'normal' : 'italic',
                 margin: 0,
                 textAlign: 'center',
                 letterSpacing: '0.01em',
-                transition: 'all 0.5s',
+                transition: 'all 0.4s',
               }}>
                 {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
               </p>
 
               {/* Block counter */}
-              <div style={{
-                marginTop: '2rem',
-                fontSize: '10px', letterSpacing: '2px',
-                color: '#3a2510', textTransform: 'uppercase',
-              }}>
-                {currentBlock + 1} of {blocks.length}
+              <div style={{ marginTop: '2rem', fontSize: '10px', letterSpacing: '2px', color: '#3a2510', textTransform: 'uppercase' }}>
+                {currentBlock + 1} / {blocks.length}
               </div>
-            </div>
+            </>
           ) : (
-            <div style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
-                {loading ? `Preparing scene ${generatingIndex + 1} of ${blocks.length || '?'}...` : 'Press play to begin'}
-              </div>
+            <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
+              {blocks.length > 0 ? 'Press play to begin' : 'Press generate to prepare the drama'}
             </div>
           )}
 
-          {/* Controls */}
-          <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
-
-            {/* Prev */}
-            <button
-              onClick={() => currentBlock > 0 && playFrom(currentBlock - 1)}
-              disabled={currentBlock <= 0}
-              style={{
-                background: 'transparent', border: 'none',
-                color: currentBlock > 0 ? '#5a4030' : '#2a1a0a',
-                fontSize: '18px', cursor: currentBlock > 0 ? 'pointer' : 'default',
-                transition: 'color 0.3s', padding: '8px',
-              }}
-            >
-              ‹
-            </button>
-
-            {/* Play/Pause */}
-            <button
-              onClick={blocks.length > 0 ? handlePlayPause : runFullTest}
-              style={{
-                width: '64px', height: '64px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #2a1a0a, #3d2510)',
-                border: '1px solid #5a3520',
-                color: '#c9a96e',
-                fontSize: '20px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.3s',
-                boxShadow: isPlaying ? '0 0 20px rgba(180,120,40,0.2)' : 'none',
-              }}
-            >
-              {loading ? '⋯' : isPlaying ? '⏸' : '▶'}
-            </button>
-
-            {/* Next */}
-            <button
-              onClick={() => currentBlock < blocks.length - 1 && playFrom(currentBlock + 1)}
-              disabled={currentBlock >= blocks.length - 1}
-              style={{
-                background: 'transparent', border: 'none',
-                color: currentBlock < blocks.length - 1 ? '#5a4030' : '#2a1a0a',
-                fontSize: '18px', cursor: currentBlock < blocks.length - 1 ? 'pointer' : 'default',
-                transition: 'color 0.3s', padding: '8px',
-              }}
-            >
-              ›
-            </button>
-          </div>
-
-          {/* Ornament */}
-          <div style={{ marginTop: '2.5rem', color: '#2a1a0a', fontSize: '14px', letterSpacing: '8px' }}>
-            ❧ ✦ ❧
-          </div>
+          {/* Loading progress when generating but blocks exist */}
+          {loading && blocks.length > 0 && (
+            <div style={{ marginTop: '1rem', fontSize: '10px', color: '#3a2510', letterSpacing: '2px' }}>
+              Preparing scene {generatingIndex + 1}...
+            </div>
+          )}
         </div>
 
-        <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
-        <audio ref={ambienceRef} loop style={{ display: 'none' }} />
-        <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
-        <audio ref={momentRef} style={{ display: 'none' }} />
-        <audio ref={moment2Ref} style={{ display: 'none' }} />
-        <audio ref={musicRef} loop style={{ display: 'none' }} />
+        {/* Controls */}
+        <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
 
-        <style>{`
-          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        `}</style>
-      </main>
-    )
-  }
-
-  // DEV MODE
-  return (
-    <main style={{
-      minHeight: '100vh',
-      background: '#0d0a07',
-      color: '#e8dcc8',
-      fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'radial-gradient(ellipse at 20% 20%, rgba(180,120,40,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(100,30,30,0.08) 0%, transparent 50%)',
-        pointerEvents: 'none', zIndex: 0
-      }} />
-
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: '760px', margin: '0 auto', padding: '3rem 2rem' }}>
-
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <div style={{ fontSize: '11px', letterSpacing: '6px', color: '#8a6840', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-            ✦ Narratescape ✦
-          </div>
-          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 'normal', color: '#e8dcc8', margin: '0 0 0.5rem', fontStyle: 'italic' }}>
-            Pride and Prejudice
-          </h1>
-          <div style={{ fontSize: '13px', color: '#6b5840', letterSpacing: '3px', textTransform: 'uppercase' }}>
-            Chapter I
-          </div>
-          <div style={{ margin: '1.5rem auto', color: '#5a4030', fontSize: '18px', letterSpacing: '8px' }}>❧ ✦ ❧</div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+          {/* Prev */}
           <button
-            onClick={runFullTest}
-            disabled={loading}
+            onClick={() => currentBlock > 0 && playFrom(currentBlock - 1)}
+            disabled={currentBlock <= 0}
             style={{
-              background: loading ? 'transparent' : 'linear-gradient(135deg, #2a1a0a, #3d2510)',
-              color: loading ? '#5a4030' : '#c9a96e',
-              border: `1px solid ${loading ? '#2a1a0a' : '#5a3520'}`,
-              padding: '12px 32px', borderRadius: '2px',
-              fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              background: 'transparent', border: 'none',
+              color: currentBlock > 0 ? '#5a4030' : '#1a1008',
+              fontSize: '24px', cursor: currentBlock > 0 ? 'pointer' : 'default',
+              transition: 'color 0.3s', padding: '8px', lineHeight: 1,
             }}
           >
-            {loading ? `Conjuring scene ${generatingIndex + 1}...` : '✦ Generate'}
+            ‹
           </button>
 
-          {blocks.length > 0 && !loading && (
-            <>
-              <button
-                onClick={handlePlayPause}
-                style={{
-                  background: isPlaying ? 'linear-gradient(135deg, #1a0a0a, #2d1010)' : 'linear-gradient(135deg, #0a1a0a, #102d10)',
-                  color: isPlaying ? '#c47c7c' : '#7caa7c',
-                  border: `1px solid ${isPlaying ? '#3d1515' : '#153d15'}`,
-                  padding: '12px 32px', borderRadius: '2px',
-                  fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                {isPlaying ? '⏸ Pause' : '▶ Play All'}
-              </button>
+          {/* Main button — Generate if no blocks, Play/Pause if blocks exist */}
+          <button
+            onClick={blocks.length > 0 ? handlePlayPause : runFullTest}
+            disabled={loading && blocks.length === 0}
+            style={{
+              width: '68px', height: '68px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2a1a0a, #3d2510)',
+              border: '1px solid #5a3520',
+              color: '#c9a96e',
+              fontSize: blocks.length === 0 ? '14px' : '22px',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.3s',
+              boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none',
+              letterSpacing: blocks.length === 0 ? '1px' : '0',
+              fontFamily: 'inherit',
+            }}
+          >
+            {loading && blocks.length === 0 ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
+          </button>
 
-              <button
-                onClick={() => { setMode('listen'); if (!isPlaying && currentBlock < 0) playFrom(0) }}
-                style={{
-                  background: 'linear-gradient(135deg, #0a0a1a, #10102d)',
-                  color: '#7c7caa',
-                  border: '1px solid #15153d',
-                  padding: '12px 32px', borderRadius: '2px',
-                  fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                ✦ Listen Mode
-              </button>
-            </>
-          )}
+          {/* Next */}
+          <button
+            onClick={() => currentBlock < blocks.length - 1 && playFrom(currentBlock + 1)}
+            disabled={currentBlock >= blocks.length - 1}
+            style={{
+              background: 'transparent', border: 'none',
+              color: currentBlock < blocks.length - 1 ? '#5a4030' : '#1a1008',
+              fontSize: '24px', cursor: currentBlock < blocks.length - 1 ? 'pointer' : 'default',
+              transition: 'color 0.3s', padding: '8px', lineHeight: 1,
+            }}
+          >
+            ›
+          </button>
         </div>
 
-        {loading && blocks.length === 0 && (
-          <div style={{
-            textAlign: 'center', padding: '4rem 2rem',
-            border: '1px solid #2a1a0a', borderRadius: '2px', background: 'rgba(20,12,4,0.6)',
-          }}>
-            <div style={{ fontSize: '28px', marginBottom: '1rem', opacity: 0.6 }}>📜</div>
-            <div style={{ color: '#8a6840', fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase' }}>
-              The drama is being prepared...
-            </div>
-          </div>
-        )}
-
-        <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
-        <audio ref={ambienceRef} loop style={{ display: 'none' }} />
-        <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
-        <audio ref={momentRef} style={{ display: 'none' }} />
-        <audio ref={moment2Ref} style={{ display: 'none' }} />
-        <audio ref={musicRef} loop style={{ display: 'none' }} />
-
-        {blocks.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {blocks.map((block, i) => {
-              const active = currentBlock === i && isPlaying
-              const generating = loading && generatingIndex === i
-              const isNarrator = NARRATOR_SPEAKERS.includes(block.speaker.toLowerCase().trim())
-              const speakerColor = getSpeakerColor(block.speaker)
-              const musicLabel = getMusicLabel(block.musicTrack)
-
-              return (
-                <div
-                  key={i}
-                  onClick={() => { setIsPlaying(true); playFrom(i) }}
-                  style={{
-                    position: 'relative', padding: '1.25rem 1.5rem', cursor: 'pointer',
-                    background: active ? 'linear-gradient(135deg, rgba(180,120,40,0.12), rgba(140,80,20,0.08))' : 'transparent',
-                    borderLeft: active ? `2px solid ${speakerColor}` : '2px solid transparent',
-                    borderBottom: '1px solid rgba(90,60,30,0.15)',
-                    transition: 'all 0.3s', opacity: generating ? 0.5 : 1,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-                    {active && <span style={{ fontSize: '10px', color: speakerColor, animation: 'pulse 1.5s infinite' }}>♪</span>}
-                    {generating && <span style={{ fontSize: '10px', color: '#5a4030' }}>⋯</span>}
-                    <span style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', color: speakerColor }}>
-                      {formatSpeakerName(block.speaker)}
-                    </span>
-                    <span style={{ fontSize: '9px', letterSpacing: '1px', textTransform: 'uppercase', color: '#4a3420', padding: '1px 6px', border: '1px solid #2a1a0a', borderRadius: '1px' }}>
-                      {block.tone}
-                    </span>
-                    {block.ambienceAudio && <span style={{ fontSize: '9px', color: '#4a6040', letterSpacing: '1px' }}>♩ ambience</span>}
-                    {musicLabel && (
-                      <span style={{ fontSize: '9px', color: musicLabel === 'tense' ? '#7c4040' : musicLabel === 'romantic' ? '#7c6040' : '#4a5a3a', letterSpacing: '1px' }}>
-                        ♬ {musicLabel}
-                      </span>
-                    )}
-                    {block.momentAudio && <span style={{ fontSize: '9px', color: '#5a5a7c', letterSpacing: '1px' }}>⚡ sfx</span>}
-                    {block.noMatch && <span style={{ fontSize: '9px', color: '#7c5a20', letterSpacing: '1px' }}>⚠ {block.suggestion}</span>}
-                  </div>
-                  <p style={{
-                    margin: 0, fontSize: '14px', lineHeight: 1.75,
-                    color: active ? '#e8dcc8' : '#9a8470',
-                    fontStyle: isNarrator ? 'normal' : 'italic',
-                    transition: 'color 0.3s',
-                  }}>
-                    {isNarrator ? block.line : `"${block.line}"`}
-                  </p>
-                </div>
-              )
-            })}
-            {!loading && (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#3a2510', fontSize: '16px', letterSpacing: '8px' }}>
-                ❧ ✦ ❧
-              </div>
-            )}
-          </div>
-        )}
+        {/* Ornament */}
+        <div style={{ marginTop: '2.5rem', color: '#2a1a0a', fontSize: '14px', letterSpacing: '8px' }}>
+          ❧ ✦ ❧
+        </div>
       </div>
 
       <style>{`
