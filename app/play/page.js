@@ -103,6 +103,10 @@ export default function Home() {
   }
 
   const playFrom = (index) => {
+    if (index === 0) {
+      activeMusicTrackRef.current = null
+      musicTrackCountRef.current = { track: null, count: 0 }
+    }
     if (index >= blocks.length) {
       setIsPlaying(false)
       setCurrentBlock(-1)
@@ -180,7 +184,7 @@ export default function Home() {
       // Music — only switch after 3 consecutive blocks with same new track
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
-        const targetVol = hasMoment ? 0.05 : isNarrator ? 0.6 : 0.45
+        const targetVol = hasMoment ? 0.3 : isNarrator ? 0.6 : 0.45
 
         if (!activeMusicTrackRef.current) {
           // First block — start music immediately
