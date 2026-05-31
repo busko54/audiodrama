@@ -9,7 +9,7 @@ export default function Home() {
   const [generatingIndex, setGeneratingIndex] = useState(-1)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [fromCache, setFromCache] = useState(false)
+  const [mode, setMode] = useState('dev') // 'dev' or 'listen'
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
@@ -62,11 +62,7 @@ export default function Home() {
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chapterText: '',
-        bookId: 'pride-and-prejudice',
-        chapterNumber: 1
-      })
+      body: JSON.stringify({ chapterText: '', bookId: 'pride-and-prejudice', chapterNumber: 1 })
     })
     const parseData = await parseRes.json()
     const allBlocks = parseData.blocks
@@ -79,12 +75,9 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          blocks: [allBlocks[i]],
-          setting,
-          bookId: 'pride-and-prejudice',
-          chapterNumber: 1,
-          blockIndex: i,
-          previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
+          blocks: [allBlocks[i]], setting,
+          bookId: 'pride-and-prejudice', chapterNumber: 1,
+          blockIndex: i, previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
         })
       })
       const stitchData = await stitchRes.json()
@@ -130,10 +123,7 @@ export default function Home() {
           ambienceRef.current.volume = hasMoment ? 0.0 : (block.ambience_volume || 0.3)
           ambienceRef.current.loop = true
           ambienceRef.current.play().catch(() => {})
-        } else {
-          ambienceRef.current.pause()
-          ambienceRef.current.src = ''
-        }
+        } else { ambienceRef.current.pause(); ambienceRef.current.src = '' }
       }
 
       if (ambience2Ref.current) {
@@ -142,10 +132,7 @@ export default function Home() {
           ambience2Ref.current.volume = hasMoment ? 0.0 : (block.ambience2_volume || 0.3)
           ambience2Ref.current.loop = true
           ambience2Ref.current.play().catch(() => {})
-        } else {
-          ambience2Ref.current.pause()
-          ambience2Ref.current.src = ''
-        }
+        } else { ambience2Ref.current.pause(); ambience2Ref.current.src = '' }
       }
 
       if (momentRef.current) {
@@ -154,10 +141,7 @@ export default function Home() {
           momentRef.current.volume = block.moment_volume || 0.9
           momentRef.current.loop = false
           momentRef.current.play().catch(() => {})
-        } else {
-          momentRef.current.pause()
-          momentRef.current.src = ''
-        }
+        } else { momentRef.current.pause(); momentRef.current.src = '' }
       }
 
       if (moment2Ref.current) {
@@ -166,10 +150,7 @@ export default function Home() {
           moment2Ref.current.volume = block.moment2_volume || 0.9
           moment2Ref.current.loop = false
           moment2Ref.current.play().catch(() => {})
-        } else {
-          moment2Ref.current.pause()
-          moment2Ref.current.src = ''
-        }
+        } else { moment2Ref.current.pause(); moment2Ref.current.src = '' }
       }
 
       if (musicRef.current) {
@@ -185,10 +166,7 @@ export default function Home() {
           const fadeIn = setInterval(() => {
             if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
               musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
-            } else {
-              clearInterval(fadeIn)
-              if (musicRef.current) musicRef.current.volume = targetVol
-            }
+            } else { clearInterval(fadeIn); if (musicRef.current) musicRef.current.volume = targetVol }
           }, 50)
         } else if (newTrack !== activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
@@ -205,10 +183,7 @@ export default function Home() {
                 const fadeIn = setInterval(() => {
                   if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
                     musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
-                  } else {
-                    clearInterval(fadeIn)
-                    if (musicRef.current) musicRef.current.volume = targetVol
-                  }
+                  } else { clearInterval(fadeIn); if (musicRef.current) musicRef.current.volume = targetVol }
                 }, 50)
               }
             }
@@ -235,12 +210,17 @@ export default function Home() {
   }
 
   const getSpeakerColor = (speaker) => {
-    const s = speaker.toLowerCase()
+    const s = speaker?.toLowerCase() || ''
     if (s.includes('narrator')) return '#c9a96e'
     if (s.includes('mrs bennet')) return '#c47c7c'
     if (s.includes('mr bennet')) return '#7c9ec4'
     if (s.includes('dracula')) return '#8b0000'
     return '#a0856c'
+  }
+
+  const formatSpeakerName = (speaker) => {
+    return speaker.replace('pp_narrator', 'Narrator').replace(/_/g, ' ')
+      .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   }
 
   const getMusicLabel = (track) => {
@@ -250,6 +230,195 @@ export default function Home() {
     return 'light'
   }
 
+  const currentBlockData = blocks[currentBlock]
+  const isNarratorCurrent = currentBlockData && NARRATOR_SPEAKERS.includes(currentBlockData.speaker?.toLowerCase().trim())
+
+  // LISTEN MODE
+  if (mode === 'listen') {
+    return (
+      <main style={{
+        minHeight: '100vh',
+        background: '#080604',
+        color: '#e8dcc8',
+        fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Atmospheric glow */}
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: currentBlockData
+            ? `radial-gradient(ellipse at 50% 40%, ${getSpeakerColor(currentBlockData.speaker)}11 0%, transparent 60%)`
+            : 'radial-gradient(ellipse at 50% 40%, rgba(180,120,40,0.05) 0%, transparent 60%)',
+          transition: 'background 2s ease',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Back to dev mode */}
+        <button
+          onClick={() => setMode('dev')}
+          style={{
+            position: 'fixed', top: '1.5rem', left: '1.5rem',
+            background: 'transparent', border: 'none',
+            color: '#3a2510', fontSize: '11px', letterSpacing: '2px',
+            textTransform: 'uppercase', cursor: 'pointer',
+            fontFamily: 'inherit', padding: '8px 12px',
+            transition: 'color 0.3s',
+          }}
+          onMouseEnter={e => e.target.style.color = '#8a6840'}
+          onMouseLeave={e => e.target.style.color = '#3a2510'}
+        >
+          ← Back
+        </button>
+
+        {/* Progress */}
+        {blocks.length > 0 && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, height: '2px',
+            background: '#1a1008',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
+              background: 'linear-gradient(to right, #5a3520, #c9a96e)',
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center', maxWidth: '620px', padding: '2rem', zIndex: 1 }}>
+
+          {/* Book info */}
+          <div style={{ marginBottom: '3rem' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '5px', color: '#4a3020', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+              ✦ Narratescape ✦
+            </div>
+            <div style={{ fontSize: '12px', letterSpacing: '3px', color: '#5a4030', textTransform: 'uppercase' }}>
+              Pride and Prejudice · Chapter I
+            </div>
+          </div>
+
+          {/* Currently playing */}
+          {currentBlockData ? (
+            <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Speaker */}
+              <div style={{
+                fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase',
+                color: getSpeakerColor(currentBlockData.speaker),
+                marginBottom: '1.5rem',
+                opacity: isPlaying ? 1 : 0.5,
+                transition: 'all 0.5s',
+              }}>
+                {isPlaying && <span style={{ marginRight: '8px', animation: 'pulse 1.5s infinite' }}>♪</span>}
+                {formatSpeakerName(currentBlockData.speaker)}
+              </div>
+
+              {/* Line */}
+              <p style={{
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
+                lineHeight: 1.8,
+                color: '#e8dcc8',
+                fontStyle: isNarratorCurrent ? 'normal' : 'italic',
+                margin: 0,
+                textAlign: 'center',
+                letterSpacing: '0.01em',
+                transition: 'all 0.5s',
+              }}>
+                {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
+              </p>
+
+              {/* Block counter */}
+              <div style={{
+                marginTop: '2rem',
+                fontSize: '10px', letterSpacing: '2px',
+                color: '#3a2510', textTransform: 'uppercase',
+              }}>
+                {currentBlock + 1} of {blocks.length}
+              </div>
+            </div>
+          ) : (
+            <div style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
+                {loading ? `Preparing scene ${generatingIndex + 1} of ${blocks.length || '?'}...` : 'Press play to begin'}
+              </div>
+            </div>
+          )}
+
+          {/* Controls */}
+          <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
+
+            {/* Prev */}
+            <button
+              onClick={() => currentBlock > 0 && playFrom(currentBlock - 1)}
+              disabled={currentBlock <= 0}
+              style={{
+                background: 'transparent', border: 'none',
+                color: currentBlock > 0 ? '#5a4030' : '#2a1a0a',
+                fontSize: '18px', cursor: currentBlock > 0 ? 'pointer' : 'default',
+                transition: 'color 0.3s', padding: '8px',
+              }}
+            >
+              ‹
+            </button>
+
+            {/* Play/Pause */}
+            <button
+              onClick={blocks.length > 0 ? handlePlayPause : runFullTest}
+              style={{
+                width: '64px', height: '64px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #2a1a0a, #3d2510)',
+                border: '1px solid #5a3520',
+                color: '#c9a96e',
+                fontSize: '20px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.3s',
+                boxShadow: isPlaying ? '0 0 20px rgba(180,120,40,0.2)' : 'none',
+              }}
+            >
+              {loading ? '⋯' : isPlaying ? '⏸' : '▶'}
+            </button>
+
+            {/* Next */}
+            <button
+              onClick={() => currentBlock < blocks.length - 1 && playFrom(currentBlock + 1)}
+              disabled={currentBlock >= blocks.length - 1}
+              style={{
+                background: 'transparent', border: 'none',
+                color: currentBlock < blocks.length - 1 ? '#5a4030' : '#2a1a0a',
+                fontSize: '18px', cursor: currentBlock < blocks.length - 1 ? 'pointer' : 'default',
+                transition: 'color 0.3s', padding: '8px',
+              }}
+            >
+              ›
+            </button>
+          </div>
+
+          {/* Ornament */}
+          <div style={{ marginTop: '2.5rem', color: '#2a1a0a', fontSize: '14px', letterSpacing: '8px' }}>
+            ❧ ✦ ❧
+          </div>
+        </div>
+
+        <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
+        <audio ref={ambienceRef} loop style={{ display: 'none' }} />
+        <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
+        <audio ref={momentRef} style={{ display: 'none' }} />
+        <audio ref={moment2Ref} style={{ display: 'none' }} />
+        <audio ref={musicRef} loop style={{ display: 'none' }} />
+
+        <style>{`
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        `}</style>
+      </main>
+    )
+  }
+
+  // DEV MODE
   return (
     <main style={{
       minHeight: '100vh',
@@ -259,49 +428,28 @@ export default function Home() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Atmospheric background */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'radial-gradient(ellipse at 20% 20%, rgba(180,120,40,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(100,30,30,0.08) 0%, transparent 50%)',
         pointerEvents: 'none', zIndex: 0
       }} />
 
-      {/* Grain overlay */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.03\'/%3E%3C/svg%3E")',
-        pointerEvents: 'none', zIndex: 0, opacity: 0.4
-      }} />
-
       <div style={{ position: 'relative', zIndex: 1, maxWidth: '760px', margin: '0 auto', padding: '3rem 2rem' }}>
 
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: '11px', letterSpacing: '6px', color: '#8a6840', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
             ✦ Narratescape ✦
           </div>
-          <h1 style={{
-            fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
-            fontWeight: 'normal',
-            color: '#e8dcc8',
-            margin: '0 0 0.5rem',
-            letterSpacing: '0.02em',
-            fontStyle: 'italic'
-          }}>
+          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 'normal', color: '#e8dcc8', margin: '0 0 0.5rem', fontStyle: 'italic' }}>
             Pride and Prejudice
           </h1>
           <div style={{ fontSize: '13px', color: '#6b5840', letterSpacing: '3px', textTransform: 'uppercase' }}>
             Chapter I
           </div>
-
-          {/* Ornamental divider */}
-          <div style={{ margin: '1.5rem auto', color: '#5a4030', fontSize: '18px', letterSpacing: '8px' }}>
-            ❧ ✦ ❧
-          </div>
+          <div style={{ margin: '1.5rem auto', color: '#5a4030', fontSize: '18px', letterSpacing: '8px' }}>❧ ✦ ❧</div>
         </div>
 
-        {/* Controls */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
           <button
             onClick={runFullTest}
             disabled={loading}
@@ -309,61 +457,59 @@ export default function Home() {
               background: loading ? 'transparent' : 'linear-gradient(135deg, #2a1a0a, #3d2510)',
               color: loading ? '#5a4030' : '#c9a96e',
               border: `1px solid ${loading ? '#2a1a0a' : '#5a3520'}`,
-              padding: '12px 32px',
-              borderRadius: '2px',
-              fontSize: '13px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              transition: 'all 0.3s',
+              padding: '12px 32px', borderRadius: '2px',
+              fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
+              cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
             }}
           >
             {loading ? `Conjuring scene ${generatingIndex + 1}...` : '✦ Generate'}
           </button>
 
           {blocks.length > 0 && !loading && (
-            <button
-              onClick={handlePlayPause}
-              style={{
-                background: isPlaying ? 'linear-gradient(135deg, #1a0a0a, #2d1010)' : 'linear-gradient(135deg, #0a1a0a, #102d10)',
-                color: isPlaying ? '#c47c7c' : '#7caa7c',
-                border: `1px solid ${isPlaying ? '#3d1515' : '#153d15'}`,
-                padding: '12px 32px',
-                borderRadius: '2px',
-                fontSize: '13px',
-                letterSpacing: '3px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'all 0.3s',
-              }}
-            >
-              {isPlaying ? '⏸ Pause' : '▶ Play All'}
-            </button>
+            <>
+              <button
+                onClick={handlePlayPause}
+                style={{
+                  background: isPlaying ? 'linear-gradient(135deg, #1a0a0a, #2d1010)' : 'linear-gradient(135deg, #0a1a0a, #102d10)',
+                  color: isPlaying ? '#c47c7c' : '#7caa7c',
+                  border: `1px solid ${isPlaying ? '#3d1515' : '#153d15'}`,
+                  padding: '12px 32px', borderRadius: '2px',
+                  fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {isPlaying ? '⏸ Pause' : '▶ Play All'}
+              </button>
+
+              <button
+                onClick={() => { setMode('listen'); if (!isPlaying && currentBlock < 0) playFrom(0) }}
+                style={{
+                  background: 'linear-gradient(135deg, #0a0a1a, #10102d)',
+                  color: '#7c7caa',
+                  border: '1px solid #15153d',
+                  padding: '12px 32px', borderRadius: '2px',
+                  fontSize: '13px', letterSpacing: '3px', textTransform: 'uppercase',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                ✦ Listen Mode
+              </button>
+            </>
           )}
         </div>
 
-        {/* Loading state */}
         {loading && blocks.length === 0 && (
           <div style={{
-            textAlign: 'center',
-            padding: '4rem 2rem',
-            border: '1px solid #2a1a0a',
-            borderRadius: '2px',
-            background: 'rgba(20,12,4,0.6)',
+            textAlign: 'center', padding: '4rem 2rem',
+            border: '1px solid #2a1a0a', borderRadius: '2px', background: 'rgba(20,12,4,0.6)',
           }}>
             <div style={{ fontSize: '28px', marginBottom: '1rem', opacity: 0.6 }}>📜</div>
             <div style={{ color: '#8a6840', fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase' }}>
               The drama is being prepared...
             </div>
-            <div style={{ color: '#4a3020', fontSize: '12px', marginTop: '8px' }}>
-              Voices, ambience, and music are being summoned
-            </div>
           </div>
         )}
 
-        {/* Audio elements */}
         <audio ref={voiceRef} onEnded={handleVoiceEnd} style={{ display: 'none' }} />
         <audio ref={ambienceRef} loop style={{ display: 'none' }} />
         <audio ref={ambience2Ref} loop style={{ display: 'none' }} />
@@ -371,7 +517,6 @@ export default function Home() {
         <audio ref={moment2Ref} style={{ display: 'none' }} />
         <audio ref={musicRef} loop style={{ display: 'none' }} />
 
-        {/* Blocks */}
         {blocks.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {blocks.map((block, i) => {
@@ -386,99 +531,35 @@ export default function Home() {
                   key={i}
                   onClick={() => { setIsPlaying(true); playFrom(i) }}
                   style={{
-                    position: 'relative',
-                    padding: '1.25rem 1.5rem',
-                    cursor: 'pointer',
-                    background: active
-                      ? 'linear-gradient(135deg, rgba(180,120,40,0.12), rgba(140,80,20,0.08))'
-                      : 'transparent',
+                    position: 'relative', padding: '1.25rem 1.5rem', cursor: 'pointer',
+                    background: active ? 'linear-gradient(135deg, rgba(180,120,40,0.12), rgba(140,80,20,0.08))' : 'transparent',
                     borderLeft: active ? `2px solid ${speakerColor}` : '2px solid transparent',
                     borderBottom: '1px solid rgba(90,60,30,0.15)',
-                    transition: 'all 0.3s',
-                    opacity: generating ? 0.5 : 1,
+                    transition: 'all 0.3s', opacity: generating ? 0.5 : 1,
                   }}
                 >
-                  {/* Active glow */}
-                  {active && (
-                    <div style={{
-                      position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px',
-                      background: `linear-gradient(to bottom, transparent, ${speakerColor}, transparent)`,
-                      filter: 'blur(4px)',
-                    }} />
-                  )}
-
-                  {/* Speaker row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-                    {active && (
-                      <span style={{ fontSize: '10px', color: speakerColor, animation: 'pulse 1.5s infinite' }}>
-                        ♪
-                      </span>
-                    )}
-                    {generating && (
-                      <span style={{ fontSize: '10px', color: '#5a4030' }}>⋯</span>
-                    )}
-
-                    {/* Speaker name */}
-                    <span style={{
-                      fontSize: '10px',
-                      letterSpacing: '2px',
-                      textTransform: 'uppercase',
-                      color: speakerColor,
-                      fontStyle: 'normal',
-                    }}>
-                      {block.speaker.replace('pp_narrator', 'Narrator').replace('_', ' ')}
+                    {active && <span style={{ fontSize: '10px', color: speakerColor, animation: 'pulse 1.5s infinite' }}>♪</span>}
+                    {generating && <span style={{ fontSize: '10px', color: '#5a4030' }}>⋯</span>}
+                    <span style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', color: speakerColor }}>
+                      {formatSpeakerName(block.speaker)}
                     </span>
-
-                    {/* Tone */}
-                    <span style={{
-                      fontSize: '9px',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase',
-                      color: '#4a3420',
-                      padding: '1px 6px',
-                      border: '1px solid #2a1a0a',
-                      borderRadius: '1px',
-                    }}>
+                    <span style={{ fontSize: '9px', letterSpacing: '1px', textTransform: 'uppercase', color: '#4a3420', padding: '1px 6px', border: '1px solid #2a1a0a', borderRadius: '1px' }}>
                       {block.tone}
                     </span>
-
-                    {/* Sound badges */}
-                    {block.ambienceAudio && (
-                      <span style={{ fontSize: '9px', color: '#4a6040', letterSpacing: '1px' }}>
-                        ♩ ambience
-                      </span>
-                    )}
+                    {block.ambienceAudio && <span style={{ fontSize: '9px', color: '#4a6040', letterSpacing: '1px' }}>♩ ambience</span>}
                     {musicLabel && (
-                      <span style={{
-                        fontSize: '9px',
-                        color: musicLabel === 'tense' ? '#7c4040' : musicLabel === 'romantic' ? '#7c6040' : '#4a5a3a',
-                        letterSpacing: '1px',
-                      }}>
+                      <span style={{ fontSize: '9px', color: musicLabel === 'tense' ? '#7c4040' : musicLabel === 'romantic' ? '#7c6040' : '#4a5a3a', letterSpacing: '1px' }}>
                         ♬ {musicLabel}
                       </span>
                     )}
-                    {block.momentAudio && (
-                      <span style={{ fontSize: '9px', color: '#5a5a7c', letterSpacing: '1px' }}>
-                        ⚡ {block.momentAudio ? 'sfx' : ''}
-                      </span>
-                    )}
-                    {block.noMatch && (
-                      <span style={{ fontSize: '9px', color: '#7c5a20', letterSpacing: '1px' }}>
-                        ⚠ {block.suggestion}
-                      </span>
-                    )}
+                    {block.momentAudio && <span style={{ fontSize: '9px', color: '#5a5a7c', letterSpacing: '1px' }}>⚡ sfx</span>}
+                    {block.noMatch && <span style={{ fontSize: '9px', color: '#7c5a20', letterSpacing: '1px' }}>⚠ {block.suggestion}</span>}
                   </div>
-
-                  {/* Line text */}
                   <p style={{
-                    margin: 0,
-                    fontSize: isNarrator ? '14px' : '15px',
-                    lineHeight: 1.75,
+                    margin: 0, fontSize: '14px', lineHeight: 1.75,
                     color: active ? '#e8dcc8' : '#9a8470',
                     fontStyle: isNarrator ? 'normal' : 'italic',
-                    fontWeight: isNarrator ? 'normal' : 'normal',
-                    paddingLeft: isNarrator ? '0' : '0',
-                    letterSpacing: isNarrator ? '0.01em' : '0',
                     transition: 'color 0.3s',
                   }}>
                     {isNarrator ? block.line : `"${block.line}"`}
@@ -486,8 +567,6 @@ export default function Home() {
                 </div>
               )
             })}
-
-            {/* End ornament */}
             {!loading && (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#3a2510', fontSize: '16px', letterSpacing: '8px' }}>
                 ❧ ✦ ❧
@@ -498,10 +577,7 @@ export default function Home() {
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
       `}</style>
     </main>
   )
