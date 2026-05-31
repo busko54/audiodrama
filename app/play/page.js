@@ -195,18 +195,32 @@ export default function Home() {
     }
   }, [currentBlock, blocks, isPlaying])
 
-  const handleVoiceEnd = () => {
-    if (!isPlaying) return
-    const current = blocks[currentBlock]
-    const pauseAfter = current?.pause_after || 0
-    if (pauseAfter > 0) {
-      if (ambienceRef.current && current?.ambienceAudio) ambienceRef.current.volume = 0.6
-      if (musicRef.current) musicRef.current.volume = 0.7
-      pauseTimeoutRef.current = setTimeout(() => playFrom(currentBlock + 1), pauseAfter)
+const handleVoiceEnd = () => {
+  if (!isPlaying) return
+  const current = blocks[currentBlock]
+  const nextIndex = currentBlock + 1
+  const pauseAfter = current?.pause_after || 0
+
+  const advance = () => {
+    if (blocks[nextIndex]) {
+      playFrom(nextIndex)
+    } else if (loading) {
+      // Next block not ready yet — wait and check again
+      pauseTimeoutRef.current = setTimeout(advance, 300)
     } else {
-      playFrom(currentBlock + 1)
+      // No more blocks and not loading — end of chapter
+      playFrom(nextIndex)
     }
   }
+
+  if (pauseAfter > 0) {
+    if (ambienceRef.current && current?.ambienceAudio) ambienceRef.current.volume = 0.6
+    if (musicRef.current) musicRef.current.volume = 0.7
+    pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
+  } else {
+    advance()
+  }
+}
 
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
