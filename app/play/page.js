@@ -366,8 +366,7 @@ const handleVoiceEnd = () => {
 
           {/* Main button — Generate if no blocks, Play/Pause if blocks exist */}
           <button
-            onClick={blocks.length > 0 ? handlePlayPause : runFullTest}
-            disabled={loading && blocks.length === 0}
+            {loading && blocks.length === 0 ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
             style={{
               width: '68px', height: '68px',
               borderRadius: '50%',
