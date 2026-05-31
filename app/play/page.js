@@ -17,7 +17,6 @@ export default function Home() {
   const moment2Ref = useRef(null)
   const musicRef = useRef(null)
   const pauseTimeoutRef = useRef(null)
-  const musicTrackCountRef = useRef({ track: null, count: 0 })
   const activeMusicTrackRef = useRef(null)
 
   const pauseAllAudio = () => {
@@ -59,7 +58,6 @@ export default function Home() {
     setGeneratingIndex(-1)
     pauseAllAudio()
     activeMusicTrackRef.current = null
-    musicTrackCountRef.current = { track: null, count: 0 }
 
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
@@ -105,7 +103,6 @@ export default function Home() {
   const playFrom = (index) => {
     if (index === 0) {
       activeMusicTrackRef.current = null
-      musicTrackCountRef.current = { track: null, count: 0 }
     }
     if (index >= blocks.length) {
       setIsPlaying(false)
@@ -181,15 +178,13 @@ export default function Home() {
         }
       }
 
-      // Music — only switch after 3 consecutive blocks with same new track
+      // Music — switch track per block with crossfade
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
         const targetVol = hasMoment ? 0.3 : isNarrator ? 0.6 : 0.45
 
         if (!activeMusicTrackRef.current) {
-          // First block — start music immediately
           activeMusicTrackRef.current = newTrack
-          musicTrackCountRef.current = { track: newTrack, count: 0 }
           musicRef.current.src = newTrack
           musicRef.current.loop = true
           musicRef.current.volume = 0
@@ -203,46 +198,29 @@ export default function Home() {
             }
           }, 50)
         } else if (newTrack !== activeMusicTrackRef.current) {
-          // Track wants to change — count consecutive blocks
-          if (musicTrackCountRef.current.track === newTrack) {
-            musicTrackCountRef.current.count += 1
-          } else {
-            musicTrackCountRef.current = { track: newTrack, count: 1 }
-          }
-
-          // Only switch after 3 consecutive blocks requesting new track
-          if (musicTrackCountRef.current.count >= 3) {
-            activeMusicTrackRef.current = newTrack
-            musicTrackCountRef.current = { track: newTrack, count: 0 }
-            const fadeOut = setInterval(() => {
-              if (musicRef.current && musicRef.current.volume > 0.02) {
-                musicRef.current.volume = Math.max(0, musicRef.current.volume - 0.05)
-              } else {
-                clearInterval(fadeOut)
-                if (musicRef.current) {
-                  musicRef.current.src = newTrack
-                  musicRef.current.loop = true
-                  musicRef.current.play().catch(() => {})
-                  musicRef.current.volume = 0
-                  const fadeIn = setInterval(() => {
-                    if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
-                      musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
-                    } else {
-                      clearInterval(fadeIn)
-                      if (musicRef.current) musicRef.current.volume = targetVol
-                    }
-                  }, 50)
-                }
+          activeMusicTrackRef.current = newTrack
+          const fadeOut = setInterval(() => {
+            if (musicRef.current && musicRef.current.volume > 0.02) {
+              musicRef.current.volume = Math.max(0, musicRef.current.volume - 0.05)
+            } else {
+              clearInterval(fadeOut)
+              if (musicRef.current) {
+                musicRef.current.src = newTrack
+                musicRef.current.loop = true
+                musicRef.current.play().catch(() => {})
+                musicRef.current.volume = 0
+                const fadeIn = setInterval(() => {
+                  if (musicRef.current && musicRef.current.volume < targetVol - 0.02) {
+                    musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
+                  } else {
+                    clearInterval(fadeIn)
+                    if (musicRef.current) musicRef.current.volume = targetVol
+                  }
+                }, 50)
               }
-            }, 50)
-          } else {
-            // Keep current track playing, just adjust volume
-            if (musicRef.current.paused) musicRef.current.play().catch(() => {})
-            musicRef.current.volume = targetVol
-          }
+            }
+          }, 50)
         } else {
-          // Same track — reset count and keep playing
-          musicTrackCountRef.current = { track: newTrack, count: 0 }
           if (musicRef.current.paused) musicRef.current.play().catch(() => {})
           musicRef.current.volume = targetVol
         }
