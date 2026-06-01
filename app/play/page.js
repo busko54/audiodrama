@@ -195,32 +195,30 @@ export default function Home() {
     }
   }, [currentBlock, blocks, isPlaying])
 
-const handleVoiceEnd = () => {
-  if (!isPlaying) return
-  const current = blocks[currentBlock]
-  const nextIndex = currentBlock + 1
-  const pauseAfter = current?.pause_after || 0
+  const handleVoiceEnd = () => {
+    if (!isPlaying) return
+    const current = blocks[currentBlock]
+    const nextIndex = currentBlock + 1
+    const pauseAfter = current?.pause_after || 0
 
-  const advance = () => {
-    if (blocks[nextIndex]) {
-      playFrom(nextIndex)
-    } else if (loading) {
-      // Next block not ready yet — wait and check again
-      pauseTimeoutRef.current = setTimeout(advance, 300)
+    const advance = () => {
+      if (blocks[nextIndex]) {
+        playFrom(nextIndex)
+      } else if (loading) {
+        pauseTimeoutRef.current = setTimeout(advance, 300)
+      } else {
+        playFrom(nextIndex)
+      }
+    }
+
+    if (pauseAfter > 0) {
+      if (ambienceRef.current && current?.ambienceAudio) ambienceRef.current.volume = 0.6
+      if (musicRef.current) musicRef.current.volume = 0.7
+      pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
     } else {
-      // No more blocks and not loading — end of chapter
-      playFrom(nextIndex)
+      advance()
     }
   }
-
-  if (pauseAfter > 0) {
-    if (ambienceRef.current && current?.ambienceAudio) ambienceRef.current.volume = 0.6
-    if (musicRef.current) musicRef.current.volume = 0.7
-    pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
-  } else {
-    advance()
-  }
-}
 
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
@@ -253,7 +251,6 @@ const handleVoiceEnd = () => {
       overflow: 'hidden',
     }}>
 
-      {/* Atmospheric glow that changes with speaker */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: currentBlockData
@@ -263,7 +260,6 @@ const handleVoiceEnd = () => {
         pointerEvents: 'none',
       }} />
 
-      {/* Progress bar */}
       {blocks.length > 0 && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
           <div style={{
@@ -284,7 +280,6 @@ const handleVoiceEnd = () => {
 
       <div style={{ textAlign: 'center', maxWidth: '640px', padding: '2rem', zIndex: 1, width: '100%' }}>
 
-        {/* Header */}
         <div style={{ marginBottom: '3rem' }}>
           <div style={{ fontSize: '10px', letterSpacing: '5px', color: '#4a3020', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             ✦ Narratescape ✦
@@ -294,87 +289,71 @@ const handleVoiceEnd = () => {
           </div>
         </div>
 
-        {/* Main content area */}
         <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-
-          {loading && blocks.length === 0 ? (
+          {loading ? (
             <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
-              The drama is being prepared...
+              <div style={{ marginBottom: '0.5rem' }}>The drama is being prepared...</div>
+              <div style={{ fontSize: '10px', color: '#2a1a0a', letterSpacing: '2px' }}>
+                Scene {generatingIndex + 1} of ~33
+              </div>
             </div>
           ) : currentBlockData ? (
             <>
-              {/* Speaker name */}
               <div style={{
                 fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase',
                 color: getSpeakerColor(currentBlockData.speaker),
-                marginBottom: '1.5rem',
-                transition: 'all 0.5s',
+                marginBottom: '1.5rem', transition: 'all 0.5s',
               }}>
                 {isPlaying && <span style={{ marginRight: '8px', animation: 'pulse 1.5s infinite' }}>♪</span>}
                 {formatSpeakerName(currentBlockData.speaker)}
               </div>
 
-              {/* Line text */}
               <p style={{
                 fontSize: 'clamp(1.1rem, 2.5vw, 1.45rem)',
-                lineHeight: 1.85,
-                color: '#e8dcc8',
+                lineHeight: 1.85, color: '#e8dcc8',
                 fontStyle: isNarratorCurrent ? 'normal' : 'italic',
-                margin: 0,
-                textAlign: 'center',
-                letterSpacing: '0.01em',
-                transition: 'all 0.4s',
+                margin: 0, textAlign: 'center',
+                letterSpacing: '0.01em', transition: 'all 0.4s',
               }}>
                 {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
               </p>
 
-              {/* Block counter */}
               <div style={{ marginTop: '2rem', fontSize: '10px', letterSpacing: '2px', color: '#3a2510', textTransform: 'uppercase' }}>
                 {currentBlock + 1} / {blocks.length}
               </div>
             </>
           ) : (
             <div style={{ color: '#3a2510', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
-              {blocks.length > 0 ? 'Press play to begin' : 'Press generate to prepare the drama'}
-            </div>
-          )}
-
-          {/* Loading progress when generating but blocks exist */}
-          {loading && blocks.length > 0 && (
-            <div style={{ marginTop: '1rem', fontSize: '10px', color: '#3a2510', letterSpacing: '2px' }}>
-              Preparing scene {generatingIndex + 1}...
+              {blocks.length > 0 ? 'Press play to begin' : 'Press ✦ to prepare the drama'}
             </div>
           )}
         </div>
 
-        {/* Controls */}
         <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
-
-          {/* Prev */}
           <button
-            onClick={() => currentBlock > 0 && playFrom(currentBlock - 1)}
-            disabled={currentBlock <= 0}
+            onClick={() => currentBlock > 0 && !loading && playFrom(currentBlock - 1)}
+            disabled={currentBlock <= 0 || loading}
             style={{
               background: 'transparent', border: 'none',
-              color: currentBlock > 0 ? '#5a4030' : '#1a1008',
-              fontSize: '24px', cursor: currentBlock > 0 ? 'pointer' : 'default',
+              color: currentBlock > 0 && !loading ? '#5a4030' : '#1a1008',
+              fontSize: '24px', cursor: currentBlock > 0 && !loading ? 'pointer' : 'default',
               transition: 'color 0.3s', padding: '8px', lineHeight: 1,
             }}
           >
             ‹
           </button>
 
-          {/* Main button — Generate if no blocks, Play/Pause if blocks exist */}
           <button
-            {loading && blocks.length === 0 ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
+            onClick={!loading ? (blocks.length > 0 ? handlePlayPause : runFullTest) : undefined}
+            disabled={loading}
             style={{
               width: '68px', height: '68px',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #2a1a0a, #3d2510)',
               border: '1px solid #5a3520',
-              color: '#c9a96e',
-              fontSize: blocks.length === 0 ? '14px' : '22px',
-              cursor: 'pointer',
+              color: loading ? '#3a2510' : '#c9a96e',
+              fontSize: blocks.length === 0 || loading ? '14px' : '22px',
+              cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.3s',
               boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none',
@@ -382,17 +361,16 @@ const handleVoiceEnd = () => {
               fontFamily: 'inherit',
             }}
           >
-            {loading && blocks.length === 0 ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
+            {loading ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
           </button>
 
-          {/* Next */}
           <button
-            onClick={() => currentBlock < blocks.length - 1 && playFrom(currentBlock + 1)}
-            disabled={currentBlock >= blocks.length - 1}
+            onClick={() => currentBlock < blocks.length - 1 && !loading && playFrom(currentBlock + 1)}
+            disabled={currentBlock >= blocks.length - 1 || loading}
             style={{
               background: 'transparent', border: 'none',
-              color: currentBlock < blocks.length - 1 ? '#5a4030' : '#1a1008',
-              fontSize: '24px', cursor: currentBlock < blocks.length - 1 ? 'pointer' : 'default',
+              color: currentBlock < blocks.length - 1 && !loading ? '#5a4030' : '#1a1008',
+              fontSize: '24px', cursor: currentBlock < blocks.length - 1 && !loading ? 'pointer' : 'default',
               transition: 'color 0.3s', padding: '8px', lineHeight: 1,
             }}
           >
@@ -400,7 +378,6 @@ const handleVoiceEnd = () => {
           </button>
         </div>
 
-        {/* Ornament */}
         <div style={{ marginTop: '2.5rem', color: '#2a1a0a', fontSize: '14px', letterSpacing: '8px' }}>
           ❧ ✦ ❧
         </div>
