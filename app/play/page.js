@@ -211,7 +211,7 @@ const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
     const nextIndex = currentBlock + 1
     const pauseAfter = current?.pause_after || 0
 
-   const advance = () => {
+ const advance = () => {
   if (blocks[nextIndex]) {
     playFrom(nextIndex)
   } else if (loading) {
@@ -232,7 +232,6 @@ if (pauseAfter > 0) {
 } else {
   advance()
 }
-
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
     if (s.includes('narrator')) return '#c9a96e'
