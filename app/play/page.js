@@ -161,7 +161,7 @@ export default function Home() {
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
-        const targetVol = hasMoment ? 0.3 : isNarrator ? 0.6 : 0.45
+const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
 
         if (!activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
