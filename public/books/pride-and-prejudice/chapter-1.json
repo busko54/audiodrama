@@ -1,6 +1,15 @@
 {
   "setting": "English countryside drawing room, daytime, refined and quiet",
   "blocks": [
+{
+      "speaker": "pp_narrator",
+      "line": "Pride and Prejudice.",
+      "tone": "solemn",
+      "emotion": "neutral",
+      "is_title": true,
+      "pause_after": 2000
+    }
+    ,
     {
       "speaker": "pp_narrator",
       "line": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
