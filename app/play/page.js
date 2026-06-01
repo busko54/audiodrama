@@ -211,26 +211,27 @@ const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
     const nextIndex = currentBlock + 1
     const pauseAfter = current?.pause_after || 0
 
-    const advance = () => {
-      if (blocks[nextIndex]) {
-        playFrom(nextIndex)
-      } else if (loading) {
-        pauseTimeoutRef.current = setTimeout(advance, 300)
-      } else {
-        playFrom(nextIndex)
-      }
-    }
-
-    if (pauseAfter > 0) {
-      // Drop all audio to near silence during dramatic pause
-      if (ambienceRef.current) ambienceRef.current.volume = 0.02
-      if (ambience2Ref.current) ambience2Ref.current.volume = 0.02
-      if (musicRef.current) musicRef.current.volume = 0.02
-      pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
-    } else {
-      advance()
-    }
+   const advance = () => {
+  if (blocks[nextIndex]) {
+    playFrom(nextIndex)
+  } else if (loading) {
+    pauseTimeoutRef.current = setTimeout(advance, 300)
+  } else {
+    playFrom(nextIndex)
   }
+}
+
+if (pauseAfter > 0) {
+  if (ambienceRef.current) ambienceRef.current.volume = 0.02
+  if (ambience2Ref.current) ambience2Ref.current.volume = 0.02
+  if (musicRef.current) musicRef.current.volume = 0.02
+  pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
+} else if (current?.momentAudio || current?.moment2Audio) {
+  // Wait for moment sound to finish before advancing
+  pauseTimeoutRef.current = setTimeout(advance, 2500)
+} else {
+  advance()
+}
 
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
