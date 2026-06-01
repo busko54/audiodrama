@@ -119,7 +119,7 @@ export default function Home() {
 
       if (block.audio && voiceRef.current) {
         voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-        voiceRef.current.volume = hasMoment ? 0.7 : 1.0
+        voiceRef.current.volume = 1.0
         voiceRef.current.play()
       }
 
@@ -161,7 +161,7 @@ export default function Home() {
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
-const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
+        const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
 
         if (!activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
@@ -211,27 +211,28 @@ const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
     const nextIndex = currentBlock + 1
     const pauseAfter = current?.pause_after || 0
 
- const advance = () => {
-  if (blocks[nextIndex]) {
-    playFrom(nextIndex)
-  } else if (loading) {
-    pauseTimeoutRef.current = setTimeout(advance, 300)
-  } else {
-    playFrom(nextIndex)
-  }
-}
+    const advance = () => {
+      if (blocks[nextIndex]) {
+        playFrom(nextIndex)
+      } else if (loading) {
+        pauseTimeoutRef.current = setTimeout(advance, 300)
+      } else {
+        playFrom(nextIndex)
+      }
+    }
 
-if (pauseAfter > 0) {
-  if (ambienceRef.current) ambienceRef.current.volume = 0.02
-  if (ambience2Ref.current) ambience2Ref.current.volume = 0.02
-  if (musicRef.current) musicRef.current.volume = 0.02
-  pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
-} else if (current?.momentAudio || current?.moment2Audio) {
-  // Wait for moment sound to finish before advancing
-  pauseTimeoutRef.current = setTimeout(advance, 2500)
-} else {
-  advance()
-}
+    if (pauseAfter > 0) {
+      if (ambienceRef.current) ambienceRef.current.volume = 0.02
+      if (ambience2Ref.current) ambience2Ref.current.volume = 0.02
+      if (musicRef.current) musicRef.current.volume = 0.02
+      pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
+    } else if (current?.momentAudio || current?.moment2Audio) {
+      pauseTimeoutRef.current = setTimeout(advance, 2500)
+    } else {
+      advance()
+    }
+  }
+
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
     if (s.includes('narrator')) return '#c9a96e'
