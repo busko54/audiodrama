@@ -17,8 +17,15 @@ export default function Home() {
   const musicRef = useRef(null)
   const pauseTimeoutRef = useRef(null)
   const activeMusicTrackRef = useRef(null)
+  const fadeIntervalsRef = useRef([])
+
+  const clearAllFades = () => {
+    fadeIntervalsRef.current.forEach(id => clearInterval(id))
+    fadeIntervalsRef.current = []
+  }
 
   const pauseAllAudio = () => {
+    clearAllFades()
     if (voiceRef.current) voiceRef.current.pause()
     if (ambienceRef.current) ambienceRef.current.pause()
     if (ambience2Ref.current) ambience2Ref.current.pause()
@@ -167,6 +174,7 @@ export default function Home() {
               musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
             } else { clearInterval(fadeIn); if (musicRef.current) musicRef.current.volume = targetVol }
           }, 50)
+          fadeIntervalsRef.current.push(fadeIn)
         } else if (newTrack !== activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
           const fadeOut = setInterval(() => {
@@ -184,9 +192,11 @@ export default function Home() {
                     musicRef.current.volume = Math.min(targetVol, musicRef.current.volume + 0.05)
                   } else { clearInterval(fadeIn); if (musicRef.current) musicRef.current.volume = targetVol }
                 }, 50)
+                fadeIntervalsRef.current.push(fadeIn)
               }
             }
           }, 50)
+          fadeIntervalsRef.current.push(fadeOut)
         } else {
           if (musicRef.current.paused) musicRef.current.play().catch(() => {})
           musicRef.current.volume = targetVol
@@ -212,8 +222,10 @@ export default function Home() {
     }
 
     if (pauseAfter > 0) {
-      if (ambienceRef.current && current?.ambienceAudio) ambienceRef.current.volume = 0.6
-      if (musicRef.current) musicRef.current.volume = 0.7
+      // Drop all audio to near silence during dramatic pause
+      if (ambienceRef.current) ambienceRef.current.volume = 0.02
+      if (ambience2Ref.current) ambience2Ref.current.volume = 0.02
+      if (musicRef.current) musicRef.current.volume = 0.02
       pauseTimeoutRef.current = setTimeout(advance, pauseAfter)
     } else {
       advance()
