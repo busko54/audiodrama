@@ -129,6 +129,92 @@
       "line": "I shall enter here some of my notes, as they may refresh my memory when I talk over my travels with Mina.",
       "tone": "warm",
       "emotion": "determined"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "In the population of Transylvania there are four distinct nationalities: Saxons in the South, and mixed with them the Wallachs, who are the descendants of the Dacians; Magyars in the West, and Szekelys in the East and North.",
+      "tone": "normal",
+      "emotion": "curious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "I am going among the latter, who claim to be descended from Attila and the Huns. This may be so, for when the Magyars conquered the country in the eleventh century they found the Huns settled in it.",
+      "tone": "solemn",
+      "emotion": "curious"
+    },
+    {
+      "speaker": "dracula_narrator",
+      "line": "Harker reflected on the history and legends of the people he was soon to meet.",
+      "tone": "solemn",
+      "emotion": "mysterious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "I read that every known superstition in the world is gathered into the horseshoe of the Carpathians, as if it were the centre of some sort of imaginative whirlpool; if so my stay may be very interesting.",
+      "tone": "ominous",
+      "emotion": "curious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "Mem., I must ask the Count all about them.",
+      "tone": "determined",
+      "emotion": "curious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "I did not sleep well, though my bed was comfortable enough, for I had all sorts of queer dreams.",
+      "tone": "tremble",
+      "emotion": "anxious",
+      "setting_change": "Hotel room in Bistritz, late night, restless and uneasy"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "There was a dog howling all night under my window, which may have had something to do with it; or it may have been the paprika, for I had to drink up all the water in my carafe, and was still thirsty.",
+      "tone": "ominous",
+      "emotion": "anxious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "Towards morning I slept and was wakened by the continuous knocking at my door, so I guess I must have been sleeping soundly then.",
+      "tone": "normal",
+      "emotion": "confused"
+    },
+    {
+      "speaker": "dracula_narrator",
+      "line": "The strange night had left him unsettled.",
+      "tone": "ominous",
+      "emotion": "mysterious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "Hm.",
+      "tone": "tremble",
+      "emotion": "anxious"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "I had for breakfast more paprika, and a sort of porridge of maize flour which they said was mamaliga, and egg-plant stuffed with forcemeat, a very excellent dish, which they call impletata.",
+      "tone": "normal",
+      "emotion": "amused"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "Mem., get recipe for this also.",
+      "tone": "warm",
+      "emotion": "warm"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "I had to hurry breakfast, for the train started a little before eight, or rather it ought to have done so, for after rushing to the station at 7:30 I had to sit in the carriage for more than an hour before we began to move.",
+      "tone": "exhausted",
+      "emotion": "irritated",
+      "setting_change": "Railway station and train carriage, morning, busy and delayed"
+    },
+    {
+      "speaker": "jonathan harker",
+      "line": "It seems to me that the further east you go the more unpunctual are the trains. What ought they to be in China?",
+      "tone": "sarcastic",
+      "emotion": "amused"
     }
   ]
 }
