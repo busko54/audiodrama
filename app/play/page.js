@@ -298,7 +298,8 @@ export default function Home() {
             ✦ Narratescape ✦
           </div>
           <div style={{ fontSize: '12px', letterSpacing: '3px', color: '#5a4030', textTransform: 'uppercase' }}>
-            Pride and Prejudice · Chapter I
+            Dracula · Chapter I
+
           </div>
         </div>
 
