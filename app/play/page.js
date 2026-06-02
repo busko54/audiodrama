@@ -68,7 +68,7 @@ export default function Home() {
     const parseRes = await fetch('/api/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chapterText: '', bookId: 'pride-and-prejudice', chapterNumber: 1 })
+      body: JSON.stringify({ chapterText: '', bookId: 'dracula', chapterNumber: 1 })
     })
     const parseData = await parseRes.json()
     const allBlocks = parseData.blocks
@@ -82,7 +82,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           blocks: [allBlocks[i]], setting,
-          bookId: 'pride-and-prejudice', chapterNumber: 1,
+         bookId: 'dracula', chapterNumber: 1,
           blockIndex: i, previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
         })
       })
