@@ -17,6 +17,7 @@ const voiceMap = {
   'mrs bennet': 'uPfISICOmessSVoItPEY',
   'mr bennet': 'aZgwaz5nPkvcODbZNhwr',
   'pp_narrator': 'ELIjLe2oDKEQ7K9QQmd4',
+  'dracula_narrator': '2gPFXx8pN3Avh27Dw5Ma',
 }
 
 async function generateAudio(text, voiceId, tone) {
