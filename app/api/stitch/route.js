@@ -54,7 +54,7 @@ breathless: { stability: 0.4, similarity_boost: 0.75, style: 0.5, text: text },
       },
       body: JSON.stringify({
         text: settings.text,
-        model_id: 'eleven_flash_v2_5',
+        model_id: 'eleven_multilingual_v2',
         voice_settings: {
           stability: settings.stability,
           similarity_boost: settings.similarity_boost,
