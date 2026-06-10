@@ -118,7 +118,7 @@ async function fetchFreesound(soundId) {
     if (!infoRes.ok) { clearTimeout(timeout); return null }
 
     const info = await infoRes.json()
-    const previewUrl = info.previews['preview-lq-mp3']
+    const previewUrl = info.previews['preview-hq-mp3'] || info.previews['preview-lq-mp3']
 
     const audioRes = await fetch(previewUrl, { signal: controller.signal })
     clearTimeout(timeout)
