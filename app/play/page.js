@@ -100,11 +100,12 @@ export default function Home() {
     if (index >= blocks.length) {
       setIsPlaying(false)
       setCurrentBlock(-1)
-      if (ambienceRef.current) { ambienceRef.current.pause(); ambienceRef.current.src = '' }
-      if (ambience2Ref.current) { ambience2Ref.current.pause(); ambience2Ref.current.src = '' }
-      if (momentRef.current) { momentRef.current.pause(); momentRef.current.src = '' }
-      if (moment2Ref.current) { moment2Ref.current.pause(); moment2Ref.current.src = '' }
-      if (musicRef.current) { musicRef.current.pause(); musicRef.current.src = '' }
+      const stopAudio = (ref) => { ref.current.pause(); ref.current.removeAttribute('src'); ref.current.load() }
+      if (ambienceRef.current) stopAudio(ambienceRef)
+      if (ambience2Ref.current) stopAudio(ambience2Ref)
+      if (momentRef.current) stopAudio(momentRef)
+      if (moment2Ref.current) stopAudio(moment2Ref)
+      if (musicRef.current) stopAudio(musicRef)
       return
     }
     setCurrentBlock(index)
@@ -125,11 +126,22 @@ export default function Home() {
 
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
+          const targetAmbiVol = block.ambience_volume || 0.25
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
           ambienceRef.current.volume = 0
           ambienceRef.current.loop = true
           ambienceRef.current.play().catch(() => {})
-        } else { ambienceRef.current.pause(); ambienceRef.current.src = '' }
+          const fadeIn = setInterval(() => {
+            if (ambienceRef.current && ambienceRef.current.volume < targetAmbiVol - 0.01) {
+              ambienceRef.current.volume = Math.min(targetAmbiVol, ambienceRef.current.volume + 0.02)
+            } else { clearInterval(fadeIn); if (ambienceRef.current) ambienceRef.current.volume = targetAmbiVol }
+          }, 50)
+          fadeIntervalsRef.current.push(fadeIn)
+        } else {
+          ambienceRef.current.pause()
+          ambienceRef.current.removeAttribute('src')
+          ambienceRef.current.load()
+        }
       }
 
       if (ambience2Ref.current) {
@@ -138,7 +150,7 @@ export default function Home() {
           ambience2Ref.current.volume = hasMoment ? 0.0 : (block.ambience2_volume || 0.3)
           ambience2Ref.current.loop = true
           ambience2Ref.current.play().catch(() => {})
-        } else { ambience2Ref.current.pause(); ambience2Ref.current.src = '' }
+        } else { ambience2Ref.current.pause(); ambience2Ref.current.removeAttribute('src'); ambience2Ref.current.load() }
       }
 
       if (momentRef.current) {
@@ -147,7 +159,7 @@ export default function Home() {
           momentRef.current.volume = block.moment_volume || 0.9
           momentRef.current.loop = false
           momentRef.current.play().catch(() => {})
-        } else { momentRef.current.pause(); momentRef.current.src = '' }
+        } else { momentRef.current.pause(); momentRef.current.removeAttribute('src'); momentRef.current.load() }
       }
 
       if (moment2Ref.current) {
@@ -156,7 +168,7 @@ export default function Home() {
           moment2Ref.current.volume = block.moment2_volume || 0.9
           moment2Ref.current.loop = false
           moment2Ref.current.play().catch(() => {})
-        } else { moment2Ref.current.pause(); moment2Ref.current.src = '' }
+        } else { moment2Ref.current.pause(); moment2Ref.current.removeAttribute('src'); moment2Ref.current.load() }
       }
 
       if (musicRef.current) {
