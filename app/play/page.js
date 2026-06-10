@@ -126,7 +126,8 @@ export default function Home() {
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-ambienceRef.current.volume = 0          ambienceRef.current.loop = true
+          ambienceRef.current.volume = 0
+          ambienceRef.current.loop = true
           ambienceRef.current.play().catch(() => {})
         } else { ambienceRef.current.pause(); ambienceRef.current.src = '' }
       }
