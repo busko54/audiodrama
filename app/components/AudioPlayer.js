@@ -69,6 +69,8 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   useEffect(() => {
     if (ambienceRef.current && ambienceRef.current.src) ambienceRef.current.volume = ambienceVol * 0.25
     if (ambience2Ref.current && ambience2Ref.current.src) ambience2Ref.current.volume = ambienceVol * 0.3
+    if (momentRef.current && momentRef.current.src) momentRef.current.volume = ambienceVol * 0.9
+    if (moment2Ref.current && moment2Ref.current.src) moment2Ref.current.volume = ambienceVol * 0.9
   }, [ambienceVol])
 
   // Apply speed changes live
@@ -275,7 +277,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       if (momentRef.current) {
         if (block.momentAudio) {
           momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
-          momentRef.current.volume = block.moment_volume || 0.9
+          momentRef.current.volume = ambienceVol * (block.moment_volume || 0.9)
           momentRef.current.loop = false
           momentRef.current.play().catch(() => {})
         } else stopAudio(momentRef)
@@ -284,7 +286,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       if (moment2Ref.current) {
         if (block.moment2Audio) {
           moment2Ref.current.src = `data:audio/mpeg;base64,${block.moment2Audio}`
-          moment2Ref.current.volume = block.moment2_volume || 0.9
+          moment2Ref.current.volume = ambienceVol * (block.moment2_volume || 0.9)
           moment2Ref.current.loop = false
           moment2Ref.current.play().catch(() => {})
         } else stopAudio(moment2Ref)
