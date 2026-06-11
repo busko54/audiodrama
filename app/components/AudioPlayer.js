@@ -215,11 +215,18 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       const isNarrator = NARRATOR_SPEAKERS.includes(block.speaker.toLowerCase().trim())
       const hasMoment = block.momentAudio || block.moment2Audio
 
-      if (block.audio && voiceRef.current) {
-        voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-        voiceRef.current.volume = voiceVol
-        voiceRef.current.playbackRate = speed
-        voiceRef.current.play()
+      const playVoice = () => {
+        if (block.audio && voiceRef.current) {
+          voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
+          voiceRef.current.volume = voiceVol
+          voiceRef.current.playbackRate = speed
+          voiceRef.current.play()
+        }
+      }
+      if (block.pause_before > 0) {
+        setTimeout(playVoice, block.pause_before)
+      } else {
+        playVoice()
       }
 
       if (ambienceRef.current) {

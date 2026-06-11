@@ -1,32 +1,92 @@
 export const dynamic = 'force-dynamic'
 
+// ── BACKGROUND LOOPS ──────────────────────────────────────────────────────────
 const backgroundSounds = {
-  'fireplace': '572304',
-  'crowd murmuring': '381373',
-  'ballroom': '187776',
-  'birds chirping': '766226',
-  'raining': '434109',
-  'wind': '196677',
-  'thunder rumbling': '578236',
-  'wolves': '753896',
+  // Interior
+  'fireplace':            '572304',
+  'fireplace quiet':      '60105',
+  'grandfather clock':    '56240',
+  'rain on windows':      '346642',
+  'wind howling':         '196677',
+  'candle ambience':      '399983',
+  'tavern interior':      '381373',
+  'church interior':      '411090',
+  'library silence':      '345152',
+  'dining room':          '321087',
+  'ballroom orchestra':   '187776',
+  'carriage interior':    '431277',
+  'cellar ambience':      '394561',
+
+  // Exterior
+  'birds chirping':       '766226',
+  'countryside':          '346633',
+  'heavy rain':           '434109',
+  'thunder storm':        '578236',
+  'wolves howling':       '753896',
+  'night insects':        '416079',
+  'ocean waves':          '155234',
+  'city street 1800s':    '339812',
+  'forest ambience':      '521575',
+  'wind in trees':        '339985',
+  'horse stable':         '404553',
+  'harbour docks':        '398728',
+
+  // Atmosphere
+  'tension drone':        '458811',
+  'eerie silence':        '399729',
+  'gothic atmosphere':    '487669',
 }
 
+// ── ONE-SHOT MOMENT SOUNDS ────────────────────────────────────────────────────
 const momentSounds = {
-  'horse carriage': '631829',
-  'horse neighing': '655262',
-  'door creaking': '195677',
-  'footsteps': '572752',
-  'church bells': '480014',
-  'lightning': '251635',
-  'crowd cheering': '678542',
-  'dress rustle': '365855',
+  // Transport
+  'horse carriage':       '631829',
+  'horse neighing':       '655262',
+  'horse hooves':         '523896',
+  'carriage door':        '414913',
+
+  // Doors & movement
+  'door creaking':        '195677',
+  'door knock':           '242740',
+  'door slam':            '264594',
+  'footsteps indoor':     '572752',
+  'footsteps gravel':     '521112',
+  'stairs creak':         '399823',
+
+  // Nature events
+  'lightning crack':      '251635',
+  'thunder boom':         '398032',
+  'rain burst':           '346641',
+  'wind gust':            '395806',
+
+  // Social & ceremony
+  'church bells':         '480014',
+  'clock chime':          '411888',
+  'crowd gasp':           '267696',
+  'crowd cheer':          '678542',
+  'applause':             '263113',
+  'glass clink toast':    '394467',
+  'quill writing':        '399710',
+
+  // Dramatic
+  'dress rustle':         '365855',
+  'book pages':           '399817',
+  'fire crackle burst':   '398066',
+  'candle snuff':         '399984',
+  'window shutter':       '414869',
+  'sword draw':           '441821',
+  'body fall':            '370220',
+  'scream distant':       '427600',
 }
 
+// ── MUSIC TRACKS ──────────────────────────────────────────────────────────────
 const musicTracks = {
-  'regency-light': '/music/light_normal.mp3',
-  'regency-tense': '/music/dramatic.mp3',
+  'regency-light':    '/music/light_normal.mp3',
+  'regency-tense':    '/music/dramatic.mp3',
   'regency-romantic': '/music/romantic.mp3',
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion) {
   const backgroundKeys = Object.keys(backgroundSounds).join(', ')
@@ -40,37 +100,62 @@ async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      max_tokens: 200,
+      model: 'gpt-4o',
+      max_tokens: 300,
       messages: [
         {
           role: 'system',
-          content: `You are an audio drama sound designer. Return a JSON object with six fields:
-- "background1": the best looping background sound for the SETTING from this list: ${backgroundKeys}. You MUST always return a value here, never null.
-- "background2": a second optional looping background sound from the same list, or null.
-- "moment1": a one-shot sound effect from this list: ${momentKeys}. You are a professional audio drama sound designer. Use your judgment to pick sounds that fit the MEANING and CONTEXT of the line, not just explicit keywords. Think about what a Hollywood sound designer would add to make this scene cinematic. Rules in priority order:
-* ARRIVALS & TRAVEL IN PERIOD SETTINGS (Regency, Victorian, Gothic, pre-1900): If the line mentions, implies, or references someone arriving, departing, travelling, visiting, or coming to a place — return "horse carriage" as moment1 AND "horse neighing" as moment2. This includes: "comes into the neighbourhood", "arrived", "coming to stay", "visit him", "settled here", "coming down", "set out", "journey", "took possession", or any explicit mention of horse, carriage, chaise, or riding. Only apply this rule if the overall setting is pre-1900. Do NOT apply for modern settings.  * DOORS & ENTRIES: If the line mentions or implies someone entering a room, a door opening or closing, or someone being shown in — return "door creaking"
-  * MOVEMENT: If the line mentions or implies walking, pacing, approaching, or footsteps — return "footsteps"
-  * CHURCH & CEREMONY: If the line mentions church, bells, wedding, Sunday, prayer, or ceremony — return "church bells"
-  * WEATHER EVENTS: If the line mentions or implies lightning, a strike, a flash, or a storm crack — return "lightning"
-  * CHARACTER ENTRANCES: If a female character is speaking for the first time after a narrator line AND the previous speaker was a narrator — return "dress rustle" to signal her physical presence entering or turning
-  * SILENCE & DISMISSAL: If a narrator line describes a character ignoring someone, making no answer, or sitting in deliberate silence — return null
-  * Use your full reasoning ability. If a sound would obviously enhance this moment based on context, setting, and period — use it. If nothing fits naturally — return null.
-- "moment2": a second one-shot sound from the same list, or null. Only populate this when the horse rule above applies.
-- "music": choose from this list: ${musicKeys}. Use the tone and emotion fields to decide:
-  * tone is "frantic" OR tone is "shout" OR emotion is "irritated" OR emotion is "desperate" OR emotion is "terrified" OR emotion is "fearful" OR emotion is "horrified" — return "regency-tense"
-  * tone is "pleading" OR emotion is "anxious" — return "regency-tense"
-  * tone is "warm" OR emotion is "warm" OR emotion is "awestruck" — return "regency-romantic"
-  * all other tones and emotions — return "regency-light"
-  * NEVER return null
-- "pause_after": a pause duration in milliseconds. Use 1800 if the line describes a character ignoring someone, making no answer, or there is a dramatic silence moment. Use 0 for all other lines.
-The setting drives background sounds. The tone and emotion fields directly determine the music choice.
-Return ONLY valid JSON. No markdown. No backticks.`
+          content: `You are a Hollywood audio drama sound designer. Your job is to make every scene feel cinematic and immersive.
+
+Return a JSON object with these fields:
+
+"background1": The primary looping background sound that fits the PHYSICAL SETTING of this scene. Choose from: ${backgroundKeys}. ALWAYS return a value — never null. Think: where are we? Indoors by a fire? Outside in a storm? A ballroom?
+
+"background2": A second optional ambient layer that adds depth. Same list. Return null if nothing adds value.
+
+"moment1": A one-shot sound effect triggered by THIS specific line. Choose from: ${momentKeys}. Apply these rules in priority order:
+  • TRAVEL/ARRIVAL (pre-1900 settings): any mention of arriving, departing, visiting, journeying, carriages, horses → "horse carriage" + "horse neighing"
+  • DOORS: entering a room, door opening/closing, being shown in → "door creaking" or "door knock"
+  • KNOCKING: someone knocking, rapping, tapping at a door → "door knock"
+  • SLAMMING: anger + door, storming out, violent exit → "door slam"
+  • FOOTSTEPS: walking, pacing, approaching, crossing a room → "footsteps indoor" or "footsteps gravel" based on setting
+  • STAIRS: going up/downstairs, descending → "stairs creak"
+  • LIGHTNING: lightning, flash, electric, struck → "lightning crack"
+  • THUNDER: thunder described explicitly → "thunder boom"
+  • CHURCH/CEREMONY: bells, wedding, Sunday, prayer → "church bells" or "clock chime"
+  • WRITING: writing a letter, journal entry, signing → "quill writing"
+  • READING: opening a book, reading a letter → "book pages"
+  • TOAST/DRINK: raising a glass, toast, cheers → "glass clink toast"
+  • DRAMATIC REVEAL/SHOCK: shocking news, sudden realisation, gasp moment → "crowd gasp"
+  • FEMALE CHARACTER ENTRANCE: female character speaks for first time after narrator → "dress rustle"
+  • DEATH/VIOLENCE: falling, striking, collapsing → "body fall"
+  • DISTANT DANGER: far-off scream, something heard in distance → "scream distant"
+  • SILENCE/DISMISSAL: character ignores, makes no reply, deliberate silence → null + set pause_after to 2000
+  • If nothing fits naturally → null
+
+"moment2": Second one-shot sound, or null. Use for horse rule (horse carriage + horse neighing together).
+
+"music": Choose from: ${musicKeys}
+  • TENSE: tone is frantic/shout/commanding, emotion is terrified/horrified/fearful/desperate/anxious, or scene involves danger/confrontation → "regency-tense"
+  • ROMANTIC: tone is warm/solemn, emotion is warm/awestruck/tender, or scene involves love/admiration/longing → "regency-romantic"
+  • LIGHT: everything else → "regency-light"
+  NEVER return null.
+
+"pause_after": milliseconds of silence AFTER the line ends. Use:
+  • 2000 for: character ignores someone, makes no reply, deliberate silence, shocking revelation lands
+  • 1200 for: end of a dramatic speech, character exits, scene transition
+  • 0 for everything else
+
+"pause_before": milliseconds of silence BEFORE the line plays. Use:
+  • 800 for: a shocking line that needs a beat before it lands, a line spoken after a long silence
+  • 0 for everything else
+
+Return ONLY valid JSON. No markdown. No backticks. No explanation.`
         },
         {
           role: 'user',
           content: `Setting: ${setting}
-Line: ${line}
+Line: "${line}"
 Speaker: ${speaker}
 Previous speaker: ${previousSpeaker || 'none'}
 Tone: ${tone || 'normal'}
@@ -93,12 +178,12 @@ Emotion: ${emotion || 'neutral'}`
       moment2: momentSounds[parsed.moment2] ? parsed.moment2 : null,
       music: musicTracks[parsed.music] ? parsed.music : 'regency-light',
       pause_after: parsed.pause_after || 0,
+      pause_before: parsed.pause_before || 0,
       noMatch: !backgroundSounds[parsed.background1],
-      suggestion: parsed.suggestion || null
     }
   } catch (e) {
     console.error('JSON parse error:', e.message, 'Raw text:', text)
-    return { background1: null, background2: null, moment1: null, moment2: null, music: 'regency-light', pause_after: 0, noMatch: true, suggestion: null }
+    return { background1: null, background2: null, moment1: null, moment2: null, music: 'regency-light', pause_after: 0, pause_before: 0, noMatch: true }
   }
 }
 
@@ -154,8 +239,8 @@ export async function POST(request) {
       moment2Audio,
       musicTrack: musicTracks[picked.music],
       pause_after: picked.pause_after,
+      pause_before: picked.pause_before,
       noMatch: picked.noMatch,
-      suggestion: picked.suggestion
     })
 
   } catch (error) {
