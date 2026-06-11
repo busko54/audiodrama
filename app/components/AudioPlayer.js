@@ -3,12 +3,14 @@ import { useState, useRef, useEffect } from 'react'
 
 const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator', 'dracula_narrator']
 
-export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) {
+export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const [blocks, setBlocks] = useState([])
   const [loading, setLoading] = useState(false)
   const [generatingIndex, setGeneratingIndex] = useState(-1)
+  const [totalBlocks, setTotalBlocks] = useState(0)
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [error, setError] = useState(null)
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
@@ -17,6 +19,8 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
   const musicRef = useRef(null)
   const pauseTimeoutRef = useRef(null)
   const activeMusicTrackRef = useRef(null)
+  const activeAmbienceSrcRef = useRef(null)
+  const activeAmbience2SrcRef = useRef(null)
   const fadeIntervalsRef = useRef([])
 
   const clearAllFades = () => {
@@ -65,37 +69,48 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
 
   const runFullTest = async () => {
     setLoading(true)
+    setError(null)
     setBlocks([])
     setCurrentBlock(-1)
     setIsPlaying(false)
     setGeneratingIndex(-1)
+    setTotalBlocks(0)
     pauseAllAudio()
     activeMusicTrackRef.current = null
+    activeAmbienceSrcRef.current = null
+    activeAmbience2SrcRef.current = null
 
-    const parseRes = await fetch('/api/parse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chapterText: '', bookId, chapterNumber })
-    })
-    const parseData = await parseRes.json()
-    const allBlocks = parseData.blocks
-    const setting = parseData.setting
-    const results = []
-
-    for (let i = 0; i < allBlocks.length; i++) {
-      setGeneratingIndex(i)
-      const stitchRes = await fetch('/api/stitch', {
+    try {
+      const parseRes = await fetch('/api/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          blocks: [allBlocks[i]], setting,
-          bookId, chapterNumber,
-          blockIndex: i, previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
-        })
+        body: JSON.stringify({ chapterText: '', bookId, chapterNumber })
       })
-      const stitchData = await stitchRes.json()
-      results.push(stitchData.blocks[0])
-      setBlocks([...results])
+      if (!parseRes.ok) throw new Error('Failed to load chapter')
+      const parseData = await parseRes.json()
+      const allBlocks = parseData.blocks
+      const setting = parseData.setting
+      setTotalBlocks(allBlocks.length)
+      const results = []
+
+      for (let i = 0; i < allBlocks.length; i++) {
+        setGeneratingIndex(i)
+        const stitchRes = await fetch('/api/stitch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            blocks: [allBlocks[i]], setting,
+            bookId, chapterNumber,
+            blockIndex: i, previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
+          })
+        })
+        if (!stitchRes.ok) throw new Error(`Failed to generate scene ${i + 1}`)
+        const stitchData = await stitchRes.json()
+        results.push(stitchData.blocks[0])
+        setBlocks([...results])
+      }
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.')
     }
 
     setLoading(false)
@@ -103,7 +118,11 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
   }
 
   const playFrom = (index) => {
-    if (index === 0) activeMusicTrackRef.current = null
+    if (index === 0) {
+      activeMusicTrackRef.current = null
+      activeAmbienceSrcRef.current = null
+      activeAmbience2SrcRef.current = null
+    }
     if (index >= blocks.length) {
       setIsPlaying(false)
       setCurrentBlock(-1)
@@ -118,6 +137,26 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
     setIsPlaying(true)
   }
 
+  // Keyboard controls
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === 'INPUT') return
+      if (e.code === 'Space') {
+        e.preventDefault()
+        if (blocks.length === 0 && !loading) { runFullTest(); return }
+        handlePlayPause()
+      }
+      if (e.code === 'ArrowRight' && currentBlock < blocks.length - 1 && !loading) {
+        playFrom(currentBlock + 1)
+      }
+      if (e.code === 'ArrowLeft' && currentBlock > 0 && !loading) {
+        playFrom(currentBlock - 1)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [blocks, currentBlock, isPlaying, loading])
+
   useEffect(() => {
     if (currentBlock >= 0 && blocks[currentBlock] && isPlaying) {
       const block = blocks[currentBlock]
@@ -130,29 +169,49 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
         voiceRef.current.play()
       }
 
+      // Ambience continuity: only restart if the track changed
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
-          const targetAmbiVol = block.ambience_volume || 0.25
-          ambienceRef.current.src = `data:audio/mpeg;base64,${block.ambienceAudio}`
-          ambienceRef.current.volume = 0
-          ambienceRef.current.loop = true
-          ambienceRef.current.play().catch(() => {})
-          const fadeIn = setInterval(() => {
-            if (ambienceRef.current && ambienceRef.current.volume < targetAmbiVol - 0.01) {
-              ambienceRef.current.volume = Math.min(targetAmbiVol, ambienceRef.current.volume + 0.02)
-            } else { clearInterval(fadeIn); if (ambienceRef.current) ambienceRef.current.volume = targetAmbiVol }
-          }, 50)
-          fadeIntervalsRef.current.push(fadeIn)
-        } else { stopAudio(ambienceRef) }
+          const newSrc = `data:audio/mpeg;base64,${block.ambienceAudio}`
+          if (activeAmbienceSrcRef.current !== newSrc) {
+            activeAmbienceSrcRef.current = newSrc
+            const targetAmbiVol = block.ambience_volume || 0.25
+            ambienceRef.current.src = newSrc
+            ambienceRef.current.volume = 0
+            ambienceRef.current.loop = true
+            ambienceRef.current.play().catch(() => {})
+            const fadeIn = setInterval(() => {
+              if (ambienceRef.current && ambienceRef.current.volume < targetAmbiVol - 0.01) {
+                ambienceRef.current.volume = Math.min(targetAmbiVol, ambienceRef.current.volume + 0.02)
+              } else { clearInterval(fadeIn); if (ambienceRef.current) ambienceRef.current.volume = targetAmbiVol }
+            }, 50)
+            fadeIntervalsRef.current.push(fadeIn)
+          } else {
+            // Same track — just make sure it's playing
+            if (ambienceRef.current.paused) ambienceRef.current.play().catch(() => {})
+          }
+        } else {
+          activeAmbienceSrcRef.current = null
+          stopAudio(ambienceRef)
+        }
       }
 
       if (ambience2Ref.current) {
         if (block.ambience2Audio) {
-          ambience2Ref.current.src = `data:audio/mpeg;base64,${block.ambience2Audio}`
-          ambience2Ref.current.volume = hasMoment ? 0.0 : (block.ambience2_volume || 0.3)
-          ambience2Ref.current.loop = true
-          ambience2Ref.current.play().catch(() => {})
-        } else { stopAudio(ambience2Ref) }
+          const newSrc2 = `data:audio/mpeg;base64,${block.ambience2Audio}`
+          if (activeAmbience2SrcRef.current !== newSrc2) {
+            activeAmbience2SrcRef.current = newSrc2
+            ambience2Ref.current.src = newSrc2
+            ambience2Ref.current.volume = hasMoment ? 0.0 : (block.ambience2_volume || 0.3)
+            ambience2Ref.current.loop = true
+            ambience2Ref.current.play().catch(() => {})
+          } else {
+            if (ambience2Ref.current.paused) ambience2Ref.current.play().catch(() => {})
+          }
+        } else {
+          activeAmbience2SrcRef.current = null
+          stopAudio(ambience2Ref)
+        }
       }
 
       if (momentRef.current) {
@@ -263,6 +322,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
 
   const currentBlockData = blocks[currentBlock]
   const isNarratorCurrent = currentBlockData && NARRATOR_SPEAKERS.includes(currentBlockData.speaker?.toLowerCase().trim())
+  const loadProgress = totalBlocks > 0 ? (blocks.length / totalBlocks) * 100 : 0
 
   return (
     <main style={{
@@ -287,13 +347,26 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
         pointerEvents: 'none',
       }} />
 
-      {blocks.length > 0 && (
+      {/* Playback progress bar */}
+      {blocks.length > 0 && !loading && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
           <div style={{
             height: '100%',
             width: `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
             background: 'linear-gradient(to right, #5a3520, #c9a96e)',
             transition: 'width 0.5s ease',
+          }} />
+        </div>
+      )}
+
+      {/* Loading progress bar */}
+      {loading && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
+          <div style={{
+            height: '100%',
+            width: `${loadProgress}%`,
+            background: 'linear-gradient(to right, #2a1a0a, #5a3520)',
+            transition: 'width 0.3s ease',
           }} />
         </div>
       )}
@@ -305,7 +378,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
       <audio ref={moment2Ref} style={{ display: 'none' }} />
       <audio ref={musicRef} loop style={{ display: 'none' }} />
 
-      <div style={{ textAlign: 'center', maxWidth: '640px', padding: '2rem', zIndex: 1, width: '100%' }}>
+      <div style={{ textAlign: 'center', maxWidth: '640px', padding: '2rem', zIndex: 1, width: '100%', boxSizing: 'border-box' }}>
 
         <div style={{ marginBottom: '3rem' }}>
           <a href="/" style={{
@@ -321,11 +394,34 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
         </div>
 
         <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          {loading ? (
-            <div style={{ color: '#8a7050', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
-              <div style={{ marginBottom: '0.5rem' }}>The drama is being prepared...</div>
+          {error ? (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#8b3030', fontSize: '13px', letterSpacing: '1px', marginBottom: '1.5rem', fontStyle: 'italic' }}>
+                {error}
+              </div>
+              <button onClick={runFullTest} style={{
+                background: 'transparent', border: '1px solid #5a3520', color: '#c9a96e',
+                padding: '10px 24px', borderRadius: '6px', fontSize: '12px',
+                letterSpacing: '2px', cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+                Try Again
+              </button>
+            </div>
+          ) : loading ? (
+            <div style={{ width: '100%', textAlign: 'center' }}>
+              <div style={{ color: '#8a7050', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic', marginBottom: '1.5rem' }}>
+                Preparing the drama...
+              </div>
+              {/* Progress bar */}
+              <div style={{ width: '100%', maxWidth: '280px', margin: '0 auto 0.75rem', height: '2px', background: '#1a1008', borderRadius: '1px' }}>
+                <div style={{
+                  height: '100%', width: `${loadProgress}%`,
+                  background: 'linear-gradient(to right, #5a3520, #c9a96e)',
+                  borderRadius: '1px', transition: 'width 0.3s ease',
+                }} />
+              </div>
               <div style={{ fontSize: '10px', color: '#6a5035', letterSpacing: '2px' }}>
-                Scene {generatingIndex + 1}
+                {blocks.length} / {totalBlocks || '…'} scenes
               </div>
             </div>
           ) : currentBlockData ? (
@@ -340,11 +436,12 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
               </div>
 
               <p style={{
-                fontSize: 'clamp(1.1rem, 2.5vw, 1.45rem)',
+                fontSize: 'clamp(1rem, 2.5vw, 1.45rem)',
                 lineHeight: 1.85, color: '#e8dcc8',
                 fontStyle: isNarratorCurrent ? 'normal' : 'italic',
                 margin: 0, textAlign: 'center',
                 letterSpacing: '0.01em', transition: 'all 0.4s',
+                wordBreak: 'break-word',
               }}>
                 {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
               </p>
@@ -354,7 +451,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
               </div>
             </>
           ) : (
-            <div style={{ color: '#8a7050', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic' }}>
+            <div style={{ color: '#8a7050', fontSize: 'clamp(12px, 2vw, 13px)', letterSpacing: '2px', fontStyle: 'italic' }}>
               {blocks.length > 0 ? 'Press play to begin' : 'Press ✦ to prepare the drama'}
             </div>
           )}
@@ -364,6 +461,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
           <button
             onClick={() => currentBlock > 0 && !loading && playFrom(currentBlock - 1)}
             disabled={currentBlock <= 0 || loading}
+            aria-label="Previous"
             style={{
               background: 'transparent', border: 'none',
               color: currentBlock > 0 && !loading ? '#8a6040' : '#2a1a0a',
@@ -377,6 +475,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
           <button
             onClick={!loading ? (blocks.length > 0 ? handlePlayPause : runFullTest) : undefined}
             disabled={loading}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
             style={{
               width: '68px', height: '68px',
               borderRadius: '50%',
@@ -390,6 +489,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
               boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none',
               letterSpacing: blocks.length === 0 ? '1px' : '0',
               fontFamily: 'inherit',
+              flexShrink: 0,
             }}
           >
             {loading ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
@@ -398,6 +498,7 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
           <button
             onClick={() => currentBlock < blocks.length - 1 && !loading && playFrom(currentBlock + 1)}
             disabled={currentBlock >= blocks.length - 1 || loading}
+            aria-label="Next"
             style={{
               background: 'transparent', border: 'none',
               color: currentBlock < blocks.length - 1 && !loading ? '#8a6040' : '#2a1a0a',
@@ -409,13 +510,20 @@ export default function AudioPlayer({ bookId, chapterNumber, title, subtitle }) 
           </button>
         </div>
 
-        <div style={{ marginTop: '2.5rem', color: '#4a3020', fontSize: '14px', letterSpacing: '8px' }}>
+        <div style={{ marginTop: '1.5rem', color: '#3a2510', fontSize: '11px', letterSpacing: '3px', textAlign: 'center' }}>
+          space · ← →
+        </div>
+
+        <div style={{ marginTop: '1rem', color: '#4a3020', fontSize: '14px', letterSpacing: '8px' }}>
           ❧ ✦ ❧
         </div>
       </div>
 
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @media (max-width: 480px) {
+          main { justify-content: flex-start; padding-top: 3rem; }
+        }
       `}</style>
     </main>
   )
