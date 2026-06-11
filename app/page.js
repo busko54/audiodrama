@@ -68,7 +68,7 @@ export default function LandingPage() {
         </p>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '1rem' }}>
-          <a href="/play" style={{
+          <a href="/play/pride-and-prejudice" style={{
             background: '#8B0000', color: '#fff', border: 'none',
             padding: '18px 40px', borderRadius: '8px', fontSize: '18px',
             cursor: 'pointer', textDecoration: 'none', fontFamily: 'Georgia, serif',
@@ -130,7 +130,7 @@ export default function LandingPage() {
           <p style={{ color: '#555', fontSize: '13px', fontStyle: 'italic' }}>
             "3 May. Bistritz. — Left Munich at 8:35 P.M..."
           </p>
-          <a href="/play" style={{
+          <a href="/play/pride-and-prejudice" style={{
             background: '#8B0000', color: '#fff', border: 'none',
             padding: '14px 32px', borderRadius: '8px', fontSize: '16px',
             cursor: 'pointer', textDecoration: 'none', fontFamily: 'Georgia, serif',
@@ -213,37 +213,37 @@ export default function LandingPage() {
             {
               title: 'Pride and Prejudice',
               author: 'Jane Austen',
-              available: true,
+              href: '/play/pride-and-prejudice',
               image: 'https://m.media-amazon.com/images/I/518cCpQ5lbL._SY445_SX342_FMwebp_.jpg'
             },
             {
               title: 'Dracula',
               author: 'Bram Stoker',
-              available: false,
+              href: '/play',
               image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg'
             },
             {
               title: 'Frankenstein',
               author: 'Mary Shelley',
-              available: false,
+              href: null,
               image: 'https://cloud.firebrandtech.com/api/v2/image/111/9780785839880/CoverArtHigh/XL'
             },
             {
               title: 'Sherlock Holmes',
               author: 'Arthur Conan Doyle',
-              available: false,
+              href: null,
               image: 'https://m.media-amazon.com/images/I/51ZlozSSZ4L._SY445_SX342_FMwebp_.jpg'
             },
           ].map((book, i) => (
             <div key={i} style={{
               background: '#111',
-              border: `1px solid ${book.available ? '#8B0000' : '#222'}`,
+              border: `1px solid ${book.href ? '#8B0000' : '#222'}`,
               borderRadius: '12px',
               overflow: 'hidden',
-              opacity: book.available ? 1 : 0.6,
+              opacity: book.href ? 1 : 0.6,
               position: 'relative'
             }}>
-              {!book.available && (
+              {!book.href && (
                 <div style={{
                   position: 'absolute', top: '12px', right: '12px',
                   background: '#222', color: '#666', fontSize: '10px',
@@ -266,8 +266,8 @@ export default function LandingPage() {
               <div style={{ padding: '1rem' }}>
                 <h3 style={{ fontSize: '0.95rem', marginBottom: '0.25rem' }}>{book.title}</h3>
                 <p style={{ color: '#666', fontSize: '13px', marginBottom: '1rem' }}>{book.author}</p>
-                {book.available ? (
-                  <a href="/play" style={{
+                {book.href ? (
+                  <a href={book.href} style={{
                     background: '#8B0000', color: '#fff',
                     padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
                     textDecoration: 'none', display: 'inline-block', fontFamily: 'Georgia, serif'
