@@ -4,11 +4,21 @@ import { useState } from 'react'
 export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault()
-    if (!email) return
+    if (!email || submitting) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+    } catch {}
     setSubmitted(true)
+    setSubmitting(false)
   }
 
   return (
@@ -327,12 +337,13 @@ export default function LandingPage() {
                 fontFamily: 'Georgia, serif', flex: '1', minWidth: '240px', outline: 'none'
               }}
             />
-            <button type="submit" style={{
+            <button type="submit" disabled={submitting} style={{
               background: '#8B0000', color: '#fff', border: 'none',
               padding: '14px 28px', borderRadius: '8px', fontSize: '16px',
-              cursor: 'pointer', fontFamily: 'Georgia, serif'
+              cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif',
+              opacity: submitting ? 0.7 : 1
             }}>
-              Join Waitlist
+              {submitting ? '...' : 'Join Waitlist'}
             </button>
           </form>
         )}

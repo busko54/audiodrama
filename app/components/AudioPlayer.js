@@ -1,7 +1,20 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator', 'dracula_narrator']
+
+const BOOK_META = {
+  'dracula': {
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg',
+    color: '#8b0000',
+    shareText: "I'm listening to Dracula on Narratescape — immersive AI audio drama 🧛",
+  },
+  'pride-and-prejudice': {
+    image: 'https://m.media-amazon.com/images/I/518cCpQ5lbL._SY445_SX342_FMwebp_.jpg',
+    color: '#c47c7c',
+    shareText: "I'm listening to Pride and Prejudice on Narratescape — immersive AI audio drama 📖",
+  },
+}
 
 export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const [blocks, setBlocks] = useState([])
@@ -11,6 +24,14 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const [currentBlock, setCurrentBlock] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [error, setError] = useState(null)
+  const [showScenes, setShowScenes] = useState(false)
+  const [showVolumes, setShowVolumes] = useState(false)
+  const [voiceVol, setVoiceVol] = useState(1.0)
+  const [musicVol, setMusicVol] = useState(1.0)
+  const [ambienceVol, setAmbienceVol] = useState(1.0)
+  const [speed, setSpeed] = useState(1)
+  const [beat, setBeat] = useState(0)
+
   const voiceRef = useRef(null)
   const ambienceRef = useRef(null)
   const ambience2Ref = useRef(null)
@@ -22,6 +43,38 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const activeAmbienceSrcRef = useRef(null)
   const activeAmbience2SrcRef = useRef(null)
   const fadeIntervalsRef = useRef([])
+  const beatRef = useRef(null)
+
+  const meta = BOOK_META[bookId] || BOOK_META['dracula']
+  const storageKey = `narratescape-${bookId}-ch${chapterNumber}`
+
+  // Waveform beat animation while playing
+  useEffect(() => {
+    if (isPlaying) {
+      beatRef.current = setInterval(() => setBeat(b => (b + 1) % 8), 120)
+    } else {
+      clearInterval(beatRef.current)
+      setBeat(0)
+    }
+    return () => clearInterval(beatRef.current)
+  }, [isPlaying])
+
+  // Apply volume changes live
+  useEffect(() => {
+    if (voiceRef.current) voiceRef.current.volume = voiceVol
+  }, [voiceVol])
+  useEffect(() => {
+    if (musicRef.current) musicRef.current.volume = musicVol * (activeMusicTrackRef.current ? 0.6 : 0)
+  }, [musicVol])
+  useEffect(() => {
+    if (ambienceRef.current && ambienceRef.current.src) ambienceRef.current.volume = ambienceVol * 0.25
+    if (ambience2Ref.current && ambience2Ref.current.src) ambience2Ref.current.volume = ambienceVol * 0.3
+  }, [ambienceVol])
+
+  // Apply speed changes live
+  useEffect(() => {
+    if (voiceRef.current) voiceRef.current.playbackRate = speed
+  }, [speed])
 
   const clearAllFades = () => {
     fadeIntervalsRef.current.forEach(id => clearInterval(id))
@@ -53,7 +106,29 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     if (musicRef.current && musicRef.current.src) musicRef.current.play().catch(() => {})
   }
 
-  const handlePlayPause = () => {
+  const playFrom = useCallback((index) => {
+    if (index === 0) {
+      activeMusicTrackRef.current = null
+      activeAmbienceSrcRef.current = null
+      activeAmbience2SrcRef.current = null
+    }
+    if (index >= blocks.length) {
+      setIsPlaying(false)
+      setCurrentBlock(-1)
+      stopAudio(ambienceRef)
+      stopAudio(ambience2Ref)
+      stopAudio(momentRef)
+      stopAudio(moment2Ref)
+      stopAudio(musicRef)
+      localStorage.removeItem(storageKey)
+      return
+    }
+    setCurrentBlock(index)
+    setIsPlaying(true)
+    localStorage.setItem(storageKey, String(index))
+  }, [blocks.length, storageKey])
+
+  const handlePlayPause = useCallback(() => {
     if (isPlaying) {
       pauseAllAudio()
       setIsPlaying(false)
@@ -65,9 +140,9 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         playFrom(0)
       }
     }
-  }
+  }, [isPlaying, currentBlock, playFrom])
 
-  const runFullTest = async () => {
+  const runFullTest = useCallback(async () => {
     setLoading(true)
     setError(null)
     setBlocks([])
@@ -79,6 +154,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     activeMusicTrackRef.current = null
     activeAmbienceSrcRef.current = null
     activeAmbience2SrcRef.current = null
+    localStorage.removeItem(storageKey)
 
     try {
       const parseRes = await fetch('/api/parse', {
@@ -115,47 +191,23 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
     setLoading(false)
     setGeneratingIndex(-1)
-  }
-
-  const playFrom = (index) => {
-    if (index === 0) {
-      activeMusicTrackRef.current = null
-      activeAmbienceSrcRef.current = null
-      activeAmbience2SrcRef.current = null
-    }
-    if (index >= blocks.length) {
-      setIsPlaying(false)
-      setCurrentBlock(-1)
-      stopAudio(ambienceRef)
-      stopAudio(ambience2Ref)
-      stopAudio(momentRef)
-      stopAudio(moment2Ref)
-      stopAudio(musicRef)
-      return
-    }
-    setCurrentBlock(index)
-    setIsPlaying(true)
-  }
+  }, [bookId, chapterNumber, storageKey])
 
   // Keyboard controls
   useEffect(() => {
     const onKey = (e) => {
-      if (e.target.tagName === 'INPUT') return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
       if (e.code === 'Space') {
         e.preventDefault()
         if (blocks.length === 0 && !loading) { runFullTest(); return }
         handlePlayPause()
       }
-      if (e.code === 'ArrowRight' && currentBlock < blocks.length - 1 && !loading) {
-        playFrom(currentBlock + 1)
-      }
-      if (e.code === 'ArrowLeft' && currentBlock > 0 && !loading) {
-        playFrom(currentBlock - 1)
-      }
+      if (e.code === 'ArrowRight' && currentBlock < blocks.length - 1 && !loading) playFrom(currentBlock + 1)
+      if (e.code === 'ArrowLeft' && currentBlock > 0 && !loading) playFrom(currentBlock - 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [blocks, currentBlock, isPlaying, loading])
+  }, [blocks, currentBlock, loading, handlePlayPause, playFrom, runFullTest])
 
   useEffect(() => {
     if (currentBlock >= 0 && blocks[currentBlock] && isPlaying) {
@@ -165,29 +217,28 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
       if (block.audio && voiceRef.current) {
         voiceRef.current.src = `data:audio/mpeg;base64,${block.audio}`
-        voiceRef.current.volume = 1.0
+        voiceRef.current.volume = voiceVol
+        voiceRef.current.playbackRate = speed
         voiceRef.current.play()
       }
 
-      // Ambience continuity: only restart if the track changed
       if (ambienceRef.current) {
         if (block.ambienceAudio) {
           const newSrc = `data:audio/mpeg;base64,${block.ambienceAudio}`
           if (activeAmbienceSrcRef.current !== newSrc) {
             activeAmbienceSrcRef.current = newSrc
-            const targetAmbiVol = block.ambience_volume || 0.25
+            const targetVol = ambienceVol * (block.ambience_volume || 0.25)
             ambienceRef.current.src = newSrc
             ambienceRef.current.volume = 0
             ambienceRef.current.loop = true
             ambienceRef.current.play().catch(() => {})
             const fadeIn = setInterval(() => {
-              if (ambienceRef.current && ambienceRef.current.volume < targetAmbiVol - 0.01) {
-                ambienceRef.current.volume = Math.min(targetAmbiVol, ambienceRef.current.volume + 0.02)
-              } else { clearInterval(fadeIn); if (ambienceRef.current) ambienceRef.current.volume = targetAmbiVol }
+              if (ambienceRef.current && ambienceRef.current.volume < targetVol - 0.01) {
+                ambienceRef.current.volume = Math.min(targetVol, ambienceRef.current.volume + 0.02)
+              } else { clearInterval(fadeIn); if (ambienceRef.current) ambienceRef.current.volume = targetVol }
             }, 50)
             fadeIntervalsRef.current.push(fadeIn)
           } else {
-            // Same track — just make sure it's playing
             if (ambienceRef.current.paused) ambienceRef.current.play().catch(() => {})
           }
         } else {
@@ -202,7 +253,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           if (activeAmbience2SrcRef.current !== newSrc2) {
             activeAmbience2SrcRef.current = newSrc2
             ambience2Ref.current.src = newSrc2
-            ambience2Ref.current.volume = hasMoment ? 0.0 : (block.ambience2_volume || 0.3)
+            ambience2Ref.current.volume = hasMoment ? 0 : ambienceVol * (block.ambience2_volume || 0.3)
             ambience2Ref.current.loop = true
             ambience2Ref.current.play().catch(() => {})
           } else {
@@ -220,7 +271,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           momentRef.current.volume = block.moment_volume || 0.9
           momentRef.current.loop = false
           momentRef.current.play().catch(() => {})
-        } else { stopAudio(momentRef) }
+        } else stopAudio(momentRef)
       }
 
       if (moment2Ref.current) {
@@ -229,12 +280,13 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           moment2Ref.current.volume = block.moment2_volume || 0.9
           moment2Ref.current.loop = false
           moment2Ref.current.play().catch(() => {})
-        } else { stopAudio(moment2Ref) }
+        } else stopAudio(moment2Ref)
       }
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
-        const targetVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
+        const baseVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
+        const targetVol = baseVol * musicVol
 
         if (!activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
@@ -285,13 +337,9 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     const pauseAfter = current?.pause_after || 0
 
     const advance = () => {
-      if (blocks[nextIndex]) {
-        playFrom(nextIndex)
-      } else if (loading) {
-        pauseTimeoutRef.current = setTimeout(advance, 300)
-      } else {
-        playFrom(nextIndex)
-      }
+      if (blocks[nextIndex]) playFrom(nextIndex)
+      else if (loading) pauseTimeoutRef.current = setTimeout(advance, 300)
+      else playFrom(nextIndex)
     }
 
     if (pauseAfter > 0) {
@@ -308,21 +356,39 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
   const getSpeakerColor = (speaker) => {
     const s = speaker?.toLowerCase() || ''
-    if (s.includes('narrator')) return '#c9a96e'
+    if (s.includes('narrator')) return meta.color === '#8b0000' ? '#c9a96e' : '#c9a96e'
     if (s.includes('mrs bennet')) return '#c47c7c'
     if (s.includes('mr bennet')) return '#7c9ec4'
     if (s.includes('dracula')) return '#8b0000'
+    if (s.includes('elizabeth')) return '#c47c7c'
+    if (s.includes('darcy')) return '#7c9ec4'
     return '#a0856c'
   }
 
   const formatSpeakerName = (speaker) => {
-    return speaker.replace('pp_narrator', 'Narrator').replace('dracula_narrator', 'Narrator').replace(/_/g, ' ')
+    return speaker
+      .replace('pp_narrator', 'Narrator')
+      .replace('dracula_narrator', 'Narrator')
+      .replace(/_/g, ' ')
       .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  }
+
+  const handleShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      await navigator.share({ title: 'Narratescape', text: meta.shareText, url }).catch(() => {})
+    } else {
+      await navigator.clipboard.writeText(`${meta.shareText} ${url}`).catch(() => {})
+      alert('Link copied to clipboard!')
+    }
   }
 
   const currentBlockData = blocks[currentBlock]
   const isNarratorCurrent = currentBlockData && NARRATOR_SPEAKERS.includes(currentBlockData.speaker?.toLowerCase().trim())
   const loadProgress = totalBlocks > 0 ? (blocks.length / totalBlocks) * 100 : 0
+
+  // Waveform bars
+  const bars = [0.4, 0.7, 1.0, 0.6, 0.9, 0.5, 0.8, 0.4]
 
   return (
     <main style={{
@@ -338,35 +404,28 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       overflow: 'hidden',
     }}>
 
+      {/* Background glow */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: currentBlockData
-          ? `radial-gradient(ellipse at 50% 40%, ${getSpeakerColor(currentBlockData.speaker)}11 0%, transparent 60%)`
-          : 'radial-gradient(ellipse at 50% 40%, rgba(180,120,40,0.05) 0%, transparent 60%)',
+          ? `radial-gradient(ellipse at 50% 40%, ${getSpeakerColor(currentBlockData.speaker)}18 0%, transparent 65%)`
+          : `radial-gradient(ellipse at 50% 40%, ${meta.color}08 0%, transparent 60%)`,
         transition: 'background 2s ease',
         pointerEvents: 'none',
       }} />
 
       {/* Playback progress bar */}
-      {blocks.length > 0 && !loading && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
+      {blocks.length > 0 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008', zIndex: 10 }}>
           <div style={{
             height: '100%',
-            width: `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
-            background: 'linear-gradient(to right, #5a3520, #c9a96e)',
-            transition: 'width 0.5s ease',
-          }} />
-        </div>
-      )}
-
-      {/* Loading progress bar */}
-      {loading && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', background: '#1a1008' }}>
-          <div style={{
-            height: '100%',
-            width: `${loadProgress}%`,
-            background: 'linear-gradient(to right, #2a1a0a, #5a3520)',
-            transition: 'width 0.3s ease',
+            width: loading
+              ? `${loadProgress}%`
+              : `${currentBlock >= 0 ? ((currentBlock + 1) / blocks.length) * 100 : 0}%`,
+            background: loading
+              ? 'linear-gradient(to right, #2a1a0a, #5a3520)'
+              : 'linear-gradient(to right, #5a3520, #c9a96e)',
+            transition: 'width 0.4s ease',
           }} />
         </div>
       )}
@@ -380,12 +439,9 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
       <div style={{ textAlign: 'center', maxWidth: '640px', padding: '2rem', zIndex: 1, width: '100%', boxSizing: 'border-box' }}>
 
-        <div style={{ marginBottom: '3rem' }}>
-          <a href="/" style={{
-            fontSize: '10px', letterSpacing: '5px', color: '#8a7050',
-            textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block',
-            textDecoration: 'none',
-          }}>
+        {/* Header */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <a href="/" style={{ fontSize: '10px', letterSpacing: '5px', color: '#8a7050', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block', textDecoration: 'none' }}>
             ✦ Narratescape ✦
           </a>
           <div style={{ fontSize: '12px', letterSpacing: '3px', color: '#a08060', textTransform: 'uppercase' }}>
@@ -393,137 +449,149 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           </div>
         </div>
 
-        <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Loading state */}
+        {loading && (
+          <div style={{ marginBottom: '2rem' }}>
+            <img src={meta.image} alt="" style={{ width: '80px', height: '110px', objectFit: 'cover', borderRadius: '4px', opacity: 0.6, marginBottom: '1.5rem' }} />
+            <div style={{ color: '#8a7050', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic', marginBottom: '1rem' }}>
+              Preparing the drama...
+            </div>
+            <div style={{ width: '200px', margin: '0 auto 0.5rem', height: '2px', background: '#1a1008', borderRadius: '1px' }}>
+              <div style={{ height: '100%', width: `${loadProgress}%`, background: 'linear-gradient(to right, #5a3520, #c9a96e)', borderRadius: '1px', transition: 'width 0.3s ease' }} />
+            </div>
+            <div style={{ fontSize: '10px', color: '#6a5035', letterSpacing: '2px' }}>
+              {blocks.length} / {totalBlocks || '…'} scenes
+            </div>
+          </div>
+        )}
+
+        {/* Main content */}
+        <div style={{ minHeight: loading ? 0 : '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           {error ? (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#8b3030', fontSize: '13px', letterSpacing: '1px', marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                {error}
-              </div>
-              <button onClick={runFullTest} style={{
-                background: 'transparent', border: '1px solid #5a3520', color: '#c9a96e',
-                padding: '10px 24px', borderRadius: '6px', fontSize: '12px',
-                letterSpacing: '2px', cursor: 'pointer', fontFamily: 'inherit',
-              }}>
+              <div style={{ color: '#8b3030', fontSize: '13px', letterSpacing: '1px', marginBottom: '1.5rem', fontStyle: 'italic' }}>{error}</div>
+              <button onClick={runFullTest} style={{ background: 'transparent', border: '1px solid #5a3520', color: '#c9a96e', padding: '10px 24px', borderRadius: '6px', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'inherit' }}>
                 Try Again
               </button>
             </div>
-          ) : loading ? (
-            <div style={{ width: '100%', textAlign: 'center' }}>
-              <div style={{ color: '#8a7050', fontSize: '13px', letterSpacing: '2px', fontStyle: 'italic', marginBottom: '1.5rem' }}>
-                Preparing the drama...
-              </div>
-              {/* Progress bar */}
-              <div style={{ width: '100%', maxWidth: '280px', margin: '0 auto 0.75rem', height: '2px', background: '#1a1008', borderRadius: '1px' }}>
-                <div style={{
-                  height: '100%', width: `${loadProgress}%`,
-                  background: 'linear-gradient(to right, #5a3520, #c9a96e)',
-                  borderRadius: '1px', transition: 'width 0.3s ease',
-                }} />
-              </div>
-              <div style={{ fontSize: '10px', color: '#6a5035', letterSpacing: '2px' }}>
-                {blocks.length} / {totalBlocks || '…'} scenes
-              </div>
-            </div>
-          ) : currentBlockData ? (
+          ) : !loading && currentBlockData ? (
             <>
-              <div style={{
-                fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase',
-                color: getSpeakerColor(currentBlockData.speaker),
-                marginBottom: '1.5rem', transition: 'all 0.5s',
-              }}>
-                {isPlaying && <span style={{ marginRight: '8px', animation: 'pulse 1.5s infinite' }}>♪</span>}
+              <div style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase', color: getSpeakerColor(currentBlockData.speaker), marginBottom: '1.5rem', transition: 'all 0.5s' }}>
                 {formatSpeakerName(currentBlockData.speaker)}
               </div>
 
-              <p style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.45rem)',
-                lineHeight: 1.85, color: '#e8dcc8',
-                fontStyle: isNarratorCurrent ? 'normal' : 'italic',
-                margin: 0, textAlign: 'center',
-                letterSpacing: '0.01em', transition: 'all 0.4s',
-                wordBreak: 'break-word',
-              }}>
+              <p style={{ fontSize: 'clamp(1rem, 2.5vw, 1.45rem)', lineHeight: 1.85, color: '#e8dcc8', fontStyle: isNarratorCurrent ? 'normal' : 'italic', margin: 0, textAlign: 'center', letterSpacing: '0.01em', transition: 'all 0.4s', wordBreak: 'break-word' }}>
                 {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
               </p>
 
-              <div style={{ marginTop: '2rem', fontSize: '10px', letterSpacing: '2px', color: '#8a7050', textTransform: 'uppercase' }}>
+              <div style={{ marginTop: '1.5rem', fontSize: '10px', letterSpacing: '2px', color: '#8a7050', textTransform: 'uppercase' }}>
                 {currentBlock + 1} / {blocks.length}
               </div>
             </>
-          ) : (
-            <div style={{ color: '#8a7050', fontSize: 'clamp(12px, 2vw, 13px)', letterSpacing: '2px', fontStyle: 'italic' }}>
-              {blocks.length > 0 ? 'Press play to begin' : 'Press ✦ to prepare the drama'}
+          ) : !loading && (
+            <div style={{ textAlign: 'center' }}>
+              <img src={meta.image} alt="" style={{ width: '80px', height: '110px', objectFit: 'cover', borderRadius: '4px', opacity: 0.5, marginBottom: '1.5rem' }} />
+              <div style={{ color: '#8a7050', fontSize: 'clamp(12px, 2vw, 13px)', letterSpacing: '2px', fontStyle: 'italic' }}>
+                {blocks.length > 0 ? 'Press play to begin' : 'Press ✦ to prepare the drama'}
+              </div>
             </div>
           )}
         </div>
 
-        <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
-          <button
-            onClick={() => currentBlock > 0 && !loading && playFrom(currentBlock - 1)}
-            disabled={currentBlock <= 0 || loading}
-            aria-label="Previous"
-            style={{
-              background: 'transparent', border: 'none',
-              color: currentBlock > 0 && !loading ? '#8a6040' : '#2a1a0a',
-              fontSize: '24px', cursor: currentBlock > 0 && !loading ? 'pointer' : 'default',
-              transition: 'color 0.3s', padding: '8px', lineHeight: 1,
-            }}
-          >
-            ‹
-          </button>
+        {/* Waveform visualizer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', height: '24px', margin: '1.5rem 0' }}>
+          {bars.map((h, i) => (
+            <div key={i} style={{
+              width: '3px',
+              borderRadius: '2px',
+              background: meta.color === '#8b0000' ? '#c9a96e' : '#c47c7c',
+              opacity: isPlaying ? 0.7 : 0.15,
+              height: isPlaying ? `${Math.max(4, h * 24 * (0.5 + 0.5 * Math.sin((beat + i) * 0.9)))}px` : '4px',
+              transition: 'height 0.12s ease, opacity 0.3s',
+            }} />
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
+          <button onClick={() => currentBlock > 0 && !loading && playFrom(currentBlock - 1)} disabled={currentBlock <= 0 || loading} style={{ background: 'transparent', border: 'none', color: currentBlock > 0 && !loading ? '#8a6040' : '#2a1a0a', fontSize: '24px', cursor: currentBlock > 0 && !loading ? 'pointer' : 'default', transition: 'color 0.3s', padding: '8px', lineHeight: 1 }}>‹</button>
 
           <button
             onClick={!loading ? (blocks.length > 0 ? handlePlayPause : runFullTest) : undefined}
             disabled={loading}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-            style={{
-              width: '68px', height: '68px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2a1a0a, #3d2510)',
-              border: '1px solid #5a3520',
-              color: loading ? '#6a5035' : '#c9a96e',
-              fontSize: blocks.length === 0 || loading ? '14px' : '22px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.3s',
-              boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none',
-              letterSpacing: blocks.length === 0 ? '1px' : '0',
-              fontFamily: 'inherit',
-              flexShrink: 0,
-            }}
+            style={{ width: '68px', height: '68px', borderRadius: '50%', background: 'linear-gradient(135deg, #2a1a0a, #3d2510)', border: '1px solid #5a3520', color: loading ? '#6a5035' : '#c9a96e', fontSize: blocks.length === 0 || loading ? '14px' : '22px', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none', letterSpacing: blocks.length === 0 ? '1px' : '0', fontFamily: 'inherit', flexShrink: 0 }}
           >
             {loading ? '⋯' : blocks.length === 0 ? '✦' : isPlaying ? '⏸' : '▶'}
           </button>
 
-          <button
-            onClick={() => currentBlock < blocks.length - 1 && !loading && playFrom(currentBlock + 1)}
-            disabled={currentBlock >= blocks.length - 1 || loading}
-            aria-label="Next"
-            style={{
-              background: 'transparent', border: 'none',
-              color: currentBlock < blocks.length - 1 && !loading ? '#8a6040' : '#2a1a0a',
-              fontSize: '24px', cursor: currentBlock < blocks.length - 1 && !loading ? 'pointer' : 'default',
-              transition: 'color 0.3s', padding: '8px', lineHeight: 1,
-            }}
-          >
-            ›
+          <button onClick={() => currentBlock < blocks.length - 1 && !loading && playFrom(currentBlock + 1)} disabled={currentBlock >= blocks.length - 1 || loading} style={{ background: 'transparent', border: 'none', color: currentBlock < blocks.length - 1 && !loading ? '#8a6040' : '#2a1a0a', fontSize: '24px', cursor: currentBlock < blocks.length - 1 && !loading ? 'pointer' : 'default', transition: 'color 0.3s', padding: '8px', lineHeight: 1 }}>›</button>
+        </div>
+
+        {/* Speed + utility controls */}
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+          {[0.75, 1, 1.25].map(s => (
+            <button key={s} onClick={() => setSpeed(s)} style={{ background: speed === s ? '#2a1a0a' : 'transparent', border: `1px solid ${speed === s ? '#5a3520' : '#1a1008'}`, color: speed === s ? '#c9a96e' : '#4a3020', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+              {s}×
+            </button>
+          ))}
+
+          <button onClick={() => { setShowVolumes(v => !v); setShowScenes(false) }} style={{ background: showVolumes ? '#2a1a0a' : 'transparent', border: `1px solid ${showVolumes ? '#5a3520' : '#1a1008'}`, color: showVolumes ? '#c9a96e' : '#4a3020', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+            🔊
+          </button>
+
+          {blocks.length > 0 && (
+            <button onClick={() => { setShowScenes(v => !v); setShowVolumes(false) }} style={{ background: showScenes ? '#2a1a0a' : 'transparent', border: `1px solid ${showScenes ? '#5a3520' : '#1a1008'}`, color: showScenes ? '#c9a96e' : '#4a3020', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+              ≡ Scenes
+            </button>
+          )}
+
+          <button onClick={handleShare} style={{ background: 'transparent', border: '1px solid #1a1008', color: '#4a3020', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+            ↗ Share
           </button>
         </div>
 
-        <div style={{ marginTop: '1.5rem', color: '#3a2510', fontSize: '11px', letterSpacing: '3px', textAlign: 'center' }}>
+        {/* Volume sliders */}
+        {showVolumes && (
+          <div style={{ marginTop: '1.25rem', background: '#0f0c08', border: '1px solid #1a1008', borderRadius: '8px', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {[
+              { label: 'Voice', value: voiceVol, set: setVoiceVol },
+              { label: 'Music', value: musicVol, set: setMusicVol },
+              { label: 'Ambience', value: ambienceVol, set: setAmbienceVol },
+            ].map(({ label, value, set }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#6a5035', textTransform: 'uppercase', width: '60px', textAlign: 'right' }}>{label}</span>
+                <input type="range" min="0" max="1" step="0.05" value={value} onChange={e => set(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: '#c9a96e', cursor: 'pointer' }} />
+                <span style={{ fontSize: '10px', color: '#6a5035', width: '28px' }}>{Math.round(value * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Scene list */}
+        {showScenes && blocks.length > 0 && (
+          <div style={{ marginTop: '1.25rem', background: '#0f0c08', border: '1px solid #1a1008', borderRadius: '8px', maxHeight: '240px', overflowY: 'auto', textAlign: 'left' }}>
+            {blocks.map((b, i) => (
+              <button key={i} onClick={() => { playFrom(i); setShowScenes(false) }} style={{ display: 'block', width: '100%', background: i === currentBlock ? '#1a1008' : 'transparent', border: 'none', borderBottom: '1px solid #0f0c08', padding: '0.6rem 1rem', cursor: 'pointer', textAlign: 'left', color: i === currentBlock ? '#c9a96e' : '#6a5035', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                <span style={{ fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', marginRight: '0.75rem', opacity: 0.5 }}>{i + 1}</span>
+                <span style={{ fontSize: '11px', color: getSpeakerColor(b.speaker), marginRight: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{formatSpeakerName(b.speaker)}</span>
+                <span style={{ fontSize: '12px', opacity: 0.7 }}>{b.line.slice(0, 50)}{b.line.length > 50 ? '…' : ''}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ marginTop: '1.5rem', color: '#3a2010', fontSize: '10px', letterSpacing: '3px', textAlign: 'center' }}>
           space · ← →
         </div>
-
-        <div style={{ marginTop: '1rem', color: '#4a3020', fontSize: '14px', letterSpacing: '8px' }}>
-          ❧ ✦ ❧
-        </div>
+        <div style={{ marginTop: '0.75rem', color: '#4a3020', fontSize: '14px', letterSpacing: '8px' }}>❧ ✦ ❧</div>
       </div>
 
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @media (max-width: 480px) {
-          main { justify-content: flex-start; padding-top: 3rem; }
-        }
+        @media (max-width: 480px) { main { justify-content: flex-start; padding-top: 3rem; } }
+        input[type=range] { -webkit-appearance: none; height: 2px; background: #2a1a0a; border-radius: 1px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #c9a96e; cursor: pointer; }
       `}</style>
     </main>
   )
