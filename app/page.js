@@ -219,7 +219,7 @@ export default function LandingPage() {
             {
               title: 'Dracula',
               author: 'Bram Stoker',
-              href: '/play',
+              href: '/play/dracula',
               image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg'
             },
             {
