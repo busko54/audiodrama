@@ -1,53 +1,81 @@
 export const dynamic = 'force-dynamic'
 
 const backgroundSounds = {
-  'fireplace':          '572304',
-  'fireplace quiet':    '60105',
-  'grandfather clock':  '56240',
-  'rain on windows':    '346642',
-  'wind howling':       '196677',
-  'candle ambience':    '399983',
-  'tavern interior':    '381373',
-  'church interior':    '411090',
-  'library silence':    '345152',
-  'dining room':        '321087',
-  'ballroom orchestra': '187776',
-  'carriage interior':  '431277',
-  'cellar ambience':    '394561',
-  'birds chirping':     '766226',
-  'countryside':        '346633',
-  'heavy rain':         '434109',
-  'thunder storm':      '578236',
-  'wolves howling':     '753896',
-  'night insects':      '416079',
-  'forest ambience':    '521575',
-  'wind in trees':      '339985',
-  'horse stable':       '404553',
-  'tension drone':      '531915',
-  'gothic atmosphere':  '531915',
+  // Interior
+  'fireplace':            '572304',
+  'fireplace quiet':      '60105',
+  'grandfather clock':    '56240',
+  'rain on windows':      '346642',
+  'wind howling':         '196677',
+  'candle ambience':      '399983',
+  'tavern interior':      '381373',
+  'inn common room':      '381373',
+  'church interior':      '411090',
+  'library silence':      '345152',
+  'dining room':          '321087',
+  'ballroom orchestra':   '187776',
+  'carriage interior':    '431277',
+  'cellar ambience':      '394561',
+  'train interior':       '457602',
+  // Exterior
+  'birds chirping':       '766226',
+  'countryside':          '346633',
+  'heavy rain':           '434109',
+  'thunder storm':        '578236',
+  'wolves howling':       '753896',
+  'night insects':        '416079',
+  'forest ambience':      '521575',
+  'wind in trees':        '339985',
+  'horse stable':         '404553',
+  'mountain wind':        '531920',
+  'city street':          '339812',
+  'train station':        '339812',
+  // Atmosphere
+  'tension drone':        '531915',
+  'gothic atmosphere':    '487669',
+  'eerie night':          '519863',
 }
 
 const momentSounds = {
-  'horse carriage':     '631829',
-  'horse neighing':     '655262',
-  'door creaking':      '195677',
-  'door knock':         '242740',
-  'door slam':          '264594',
-  'footsteps indoor':   '572752',
-  'footsteps gravel':   '521112',
-  'stairs creak':       '399823',
-  'lightning crack':    '251635',
-  'thunder boom':       '398032',
-  'church bells':       '480014',
-  'clock chime':        '411888',
-  'crowd gasp':         '267696',
-  'crowd cheer':        '678542',
-  'glass clink toast':  '394467',
-  'quill writing':      '399710',
-  'dress rustle':       '365855',
-  'book pages':         '399817',
-  'body fall':          '370220',
-  'scream distant':     '427600',
+  // Transport
+  'train whistle':        '268060',
+  'train passing':        '507389',
+  'horse carriage':       '631829',
+  'horse neighing':       '655262',
+  'horse hooves':         '523896',
+  // Doors & movement
+  'door creaking':        '195677',
+  'door knock':           '242740',
+  'door slam':            '264594',
+  'footsteps indoor':     '572752',
+  'footsteps street':     '521112',
+  'footsteps gravel':     '396895',
+  'stairs creak':         '399823',
+  // Animals
+  'dog howling':          '398073',
+  'wolves close':         '395668',
+  // Weather
+  'lightning crack':      '251635',
+  'thunder boom':         '398032',
+  'wind gust':            '395806',
+  // Eating & drinking
+  'eating chewing':       '399720',
+  'drinking gulping':     '399718',
+  'spoon bowl':           '395267',
+  // Social & attention
+  'waiter whistle':       '399833',
+  'finger snap':          '399833',
+  'church bells':         '480014',
+  'clock chime':          '411888',
+  'crowd gasp':           '267696',
+  'glass clink toast':    '394467',
+  // Writing & reading
+  'quill writing':        '399710',
+  'book pages':           '399817',
+  // Dramatic
+  'dress rustle':         '365855',
+  'body fall':            '370220',
+  'scream distant':       '427600',
 }
 
 const musicTracks = {
@@ -65,7 +93,7 @@ export async function POST(request) {
     const { blocks, setting } = await request.json()
 
     const blockSummary = blocks.map((b, i) =>
-      `[${i}] ${b.speaker}: "${b.line.slice(0, 120)}${b.line.length > 120 ? '...' : ''}" (tone: ${b.tone || 'normal'}, emotion: ${b.emotion || 'neutral'})`
+      `[${i}] ${b.speaker}: "${b.line.slice(0, 150)}${b.line.length > 150 ? '...' : ''}" (tone: ${b.tone || 'normal'}, emotion: ${b.emotion || 'neutral'})`
     ).join('\n')
 
     const backgroundKeys = Object.keys(backgroundSounds).join(', ')
@@ -84,39 +112,57 @@ export async function POST(request) {
         messages: [
           {
             role: 'system',
-            content: `You are a BBC radio drama sound designer planning the complete soundscape for an audio drama chapter. You have read the entire chapter and now make all sound decisions at once, with full context.
+            content: `You are a BBC radio drama sound designer planning the complete soundscape for an audio drama chapter. You read the ENTIRE chapter before making any decisions. Think like a film sound editor.
 
-Your guiding principles:
-• LESS IS MORE. Restraint and silence are more powerful than constant noise.
-• Ambience holds for entire scenes — it only changes when the physical location changes.
-• Sound effects are rare and precise — maybe 4-8 for a whole chapter, firing at the exact dramatic moment.
-• Music shifts slowly — 2-4 changes per chapter, held for extended sections.
+CORE PRINCIPLES:
+• Ambience sets the LOCATION and holds steady until the character physically moves somewhere new
+• Sound effects are SPARSE — aim for 5-10 total per chapter, each at a specific meaningful moment
+• The delay field is crucial — the sound must fire at the exact WORD where the action happens, not at the start of the line
+• Music changes slowly, 2-4 times per chapter maximum
 
 Return a JSON object with three arrays:
 
-"scenes": Array of scene objects, each covering a range of blocks with consistent ambience.
-  Each scene: { "from": blockIndex, "to": blockIndex, "background1": soundName, "background2": soundNameOrNull, "music": musicKey }
-  • background1 from: ${backgroundKeys}
-  • background2 is optional — null unless a second layer genuinely adds depth
-  • music from: ${musicKeys}
-  • Scenes must be contiguous and cover ALL blocks (0 to ${blocks.length - 1})
-  • Only create a new scene when the physical location or atmosphere meaningfully changes
+"scenes": Covers all blocks with consistent ambience per physical location.
+  { "from": 0, "to": 5, "background1": "train interior", "background2": null, "music": "light" }
+  background1 options: ${backgroundKeys}
+  music options: ${musicKeys}
+  MUST cover every block from 0 to ${blocks.length - 1} with no gaps.
 
-"moments": Array of one-shot sound effects — BE VERY SELECTIVE, aim for 4-8 total maximum.
-  Each moment: { "blockIndex": number, "sound": soundName, "delay": secondsIntoLine, "sound2": soundNameOrNull, "delay2": secondsOrNull }
-  • sound from: ${momentKeys}
-  • delay: how many seconds into the spoken line the sound fires (based on where in the sentence the action happens)
-  • Only add a moment when an action is EXPLICITLY described: a door opens, someone knocks, a carriage arrives, lightning strikes, etc.
-  • Do NOT add sounds for general travel, vague movement, or atmosphere — only explicit physical actions
-  • For journal headers/memos (short lines under 10 words): you MAY add "quill writing" at delay 0
+"moments": Specific one-shot effects, 5-10 max for the whole chapter.
+  { "blockIndex": 2, "sound": "train whistle", "delay": 0.5, "sound2": null, "delay2": null }
+  sound options: ${momentKeys}
+  delay = seconds into the line when the action word is spoken (use ~130 words/min to estimate)
 
-"pauses": Array of dramatic pause instructions.
-  Each pause: { "blockIndex": number, "pause_before": msOrZero, "pause_after": msOrZero }
-  • pause_before: silence before the line (max 800ms) — only for genuinely shocking revelations
-  • pause_after: silence after the line (max 2000ms) — for deliberate silence, ignored questions, dramatic exits
-  • Only include blocks that actually need a pause — leave out all others
+  TRIGGER RULES — only fire when the action is EXPLICITLY in the text:
+  • Train departing/arriving/whistling → "train whistle" or "train passing"
+  • Walking through streets/city explicitly → "footsteps street" at the word "walk"
+  • Dog howling described → "dog howling"
+  • Eating food described → "eating chewing" when narrator describes eating
+  • Drinking described → "drinking gulping" when narrator describes drinking
+  • Calling a waiter/summoning someone → "waiter whistle" or "finger snap"
+  • Wolves/wild animals described close by → "wolves close"
+  • Door opens/closes → "door creaking"
+  • Someone knocks → "door knock"
+  • Horse carriage arrives/departs → "horse carriage" + "horse neighing"
+  • Lightning/thunder explicitly described → "lightning crack" or "thunder boom"
+  • Writing in journal → "quill writing" at delay 0
+  • Short journal header (under 10 words) → "quill writing" at delay 0
+  • Music shift: when the MOOD of the scene shifts (darker, more dangerous, more romantic) — handle this via the scenes array by starting a new scene with the new music key, not via moments
 
-Return ONLY valid JSON. No markdown. No backticks. No explanation.`
+  TIMING EXAMPLES:
+  • "Left Munich at 8:35 in the evening" — train whistle at delay 0.3 (right at the start, he's on the train)
+  • "I could walk through the streets" — footsteps street at delay ~3.5 (fires on the word "walk")
+  • "There was a dog howling all night" — dog howling at delay 1.0 (fires on "dog howling")
+  • "I had for dinner a chicken" — eating chewing at delay ~2.5 (fires when he starts eating)
+  • "I asked the waiter" — waiter whistle at delay 0.5
+  • "one of the wildest portions of Europe" — no sound, this is description not action
+  • Scene becomes gothic/darker/dangerous → start a new scene with music: "tense"
+
+"pauses": Dramatic silences.
+  { "blockIndex": 5, "pause_before": 0, "pause_after": 1500 }
+  Only add when truly needed: shocking reveal, deliberate silence, dramatic exit.
+
+Return ONLY valid JSON. No markdown. No backticks.`
           },
           {
             role: 'user',
@@ -136,10 +182,8 @@ ${blockSummary}`
 
     const plan = JSON.parse(text)
 
-    // Build a per-block lookup for fast access in stitch
     const blockMap = {}
     for (let i = 0; i < blocks.length; i++) {
-      // Find which scene this block belongs to
       const scene = plan.scenes.find(s => i >= s.from && i <= s.to)
       const moment = plan.moments?.find(m => m.blockIndex === i)
       const pause = plan.pauses?.find(p => p.blockIndex === i)
