@@ -124,6 +124,9 @@ export async function POST(request) {
       const m1Id = MOMENT_SOUNDS[soundPlan.moment1]
       const m2Id = MOMENT_SOUNDS[soundPlan.moment2]
 
+      if (m1Id) console.log(`Block ${actualIndex}: fetching moment1 "${soundPlan.moment1}" id=${m1Id}`)
+      if (m2Id) console.log(`Block ${actualIndex}: fetching moment2 "${soundPlan.moment2}" id=${m2Id}`)
+
       const [audio, ambienceAudio, ambience2Audio, momentAudio, moment2Audio] = await Promise.all([
         generateAudio(block.line, voiceId, block.tone),
         bg1Id ? fetchFreesound(bg1Id) : Promise.resolve(null),
@@ -131,6 +134,8 @@ export async function POST(request) {
         m1Id  ? fetchFreesound(m1Id)  : Promise.resolve(null),
         m2Id  ? fetchFreesound(m2Id)  : Promise.resolve(null),
       ])
+
+      if (m1Id) console.log(`Block ${actualIndex}: moment1 fetch result=${momentAudio ? 'OK' : 'FAILED'}`)
 
       const musicKey = soundPlan.music || 'light'
       const musicTrack = { light: '/music/light_normal.mp3', tense: '/music/dramatic.mp3', romantic: '/music/romantic.mp3' }[musicKey] || '/music/light_normal.mp3'

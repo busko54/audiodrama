@@ -182,19 +182,29 @@ ${blockSummary}`
 
     const plan = JSON.parse(text)
 
+    console.log('Sound plan moments:', JSON.stringify(plan.moments))
+    console.log('Sound plan scenes:', JSON.stringify(plan.scenes?.slice(0, 5)))
+
     const blockMap = {}
     for (let i = 0; i < blocks.length; i++) {
       const scene = plan.scenes.find(s => i >= s.from && i <= s.to)
       const moment = plan.moments?.find(m => m.blockIndex === i)
       const pause = plan.pauses?.find(p => p.blockIndex === i)
 
+      const moment1Valid = momentSounds[moment?.sound]
+      const moment2Valid = momentSounds[moment?.sound2]
+
+      if (moment) {
+        console.log(`Block ${i} moment: sound="${moment.sound}" valid=${!!moment1Valid} id=${momentSounds[moment.sound]}`)
+      }
+
       blockMap[i] = {
         background1: backgroundSounds[scene?.background1] ? scene.background1 : 'fireplace quiet',
         background2: backgroundSounds[scene?.background2] ? scene.background2 : null,
         music: musicTracks[scene?.music] ? scene.music : 'light',
-        moment1: momentSounds[moment?.sound] ? moment.sound : null,
+        moment1: moment1Valid ? moment.sound : null,
         moment1_delay: moment?.delay || 0,
-        moment2: momentSounds[moment?.sound2] ? moment.sound2 : null,
+        moment2: moment2Valid ? moment.sound2 : null,
         moment2_delay: moment?.delay2 || 0,
         pause_before: pause?.pause_before || 0,
         pause_after: pause?.pause_after || 0,
