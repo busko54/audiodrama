@@ -45,7 +45,7 @@ const momentSounds = {
   'horse hooves':         '523896',
   // Doors & movement
   'door creaking':        '195677',
-  'door knock':           '242740',
+  'door knock':           '629987',
   'door slam':            '264594',
   'footsteps indoor':     '572752',
   'footsteps street':     '166306',
