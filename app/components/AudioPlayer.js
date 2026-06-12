@@ -186,6 +186,17 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     }
   }, [isPlaying, currentBlock, playFrom])
 
+  const clearCacheAndRegenerate = useCallback(async () => {
+    try {
+      await fetch('/api/clear-cache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId, chapterNumber })
+      })
+    } catch {}
+    runFullTest()
+  }, [bookId, chapterNumber, runFullTest])
+
   const runFullTest = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -329,11 +340,11 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       // Fire moment sounds at their specific delay times within the line
       clearMomentTimeouts()
       if (block.momentAudio) {
-        scheduleMoment(momentRef, block.momentAudio, ambienceVol * (block.moment_volume || 0.9), block.moment1_delay || 0)
+        scheduleMoment(momentRef, block.momentAudio, Math.min(1.0, voiceVol * 1.2), block.moment1_delay || 0)
       } else stopAudio(momentRef)
 
       if (block.moment2Audio) {
-        scheduleMoment(moment2Ref, block.moment2Audio, ambienceVol * (block.moment2_volume || 0.9), block.moment2_delay || 0)
+        scheduleMoment(moment2Ref, block.moment2Audio, Math.min(1.0, voiceVol * 1.2), block.moment2_delay || 0)
       } else stopAudio(moment2Ref)
 
       if (musicRef.current) {
@@ -544,8 +555,13 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
                 {isNarratorCurrent ? currentBlockData.line : `"${currentBlockData.line}"`}
               </p>
 
-              <div style={{ marginTop: '1.5rem', fontSize: '10px', letterSpacing: '2px', color: '#8a7050', textTransform: 'uppercase' }}>
-                {currentBlock + 1} / {blocks.length}
+              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#8a7050', textTransform: 'uppercase' }}>
+                  {currentBlock + 1} / {blocks.length}
+                </span>
+                <button onClick={clearCacheAndRegenerate} title="Clear cache and regenerate" style={{ background: 'transparent', border: 'none', color: '#5a4030', fontSize: '11px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', padding: 0 }}>
+                  ↺ Regenerate
+                </button>
               </div>
             </>
           ) : !loading && (
