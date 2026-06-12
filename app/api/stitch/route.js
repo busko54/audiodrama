@@ -118,6 +118,8 @@ export async function POST(request) {
         emotion: block.emotion,
         pause_after: ambienceData.pause_after || block.pause_after || 0,
         pause_before: ambienceData.pause_before || 0,
+        moment1_delay: ambienceData.moment1_delay || 0,
+        moment2_delay: ambienceData.moment2_delay || 0,
         audio,
         ambienceAudio: ambienceData.audio || null,
         ambience2Audio: ambienceData.audio2 || null,

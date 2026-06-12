@@ -44,6 +44,26 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const activeAmbience2SrcRef = useRef(null)
   const fadeIntervalsRef = useRef([])
   const beatRef = useRef(null)
+  const momentTimeoutsRef = useRef([])
+  const lastTwoMusicRef = useRef([]) // music inertia: only change after 2 consecutive same recommendations
+
+  const clearMomentTimeouts = () => {
+    momentTimeoutsRef.current.forEach(id => clearTimeout(id))
+    momentTimeoutsRef.current = []
+  }
+
+  const scheduleMoment = (ref, audioData, vol, delaySeconds) => {
+    if (!ref.current || !audioData) return
+    const ms = Math.round((delaySeconds || 0) * 1000)
+    const id = setTimeout(() => {
+      if (!ref.current) return
+      ref.current.src = `data:audio/mpeg;base64,${audioData}`
+      ref.current.volume = vol
+      ref.current.loop = false
+      ref.current.play().catch(() => {})
+    }, ms)
+    momentTimeoutsRef.current.push(id)
+  }
 
   const meta = BOOK_META[bookId] || BOOK_META['dracula']
   const storageKey = `narratescape-${bookId}-ch${chapterNumber}`
@@ -92,6 +112,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
   const pauseAllAudio = () => {
     clearAllFades()
+    clearMomentTimeouts()
     if (voiceRef.current) voiceRef.current.pause()
     if (ambienceRef.current) ambienceRef.current.pause()
     if (ambience2Ref.current) ambience2Ref.current.pause()
@@ -274,28 +295,27 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         }
       }
 
-      if (momentRef.current) {
-        if (block.momentAudio) {
-          momentRef.current.src = `data:audio/mpeg;base64,${block.momentAudio}`
-          momentRef.current.volume = ambienceVol * (block.moment_volume || 0.9)
-          momentRef.current.loop = false
-          momentRef.current.play().catch(() => {})
-        } else stopAudio(momentRef)
-      }
+      // Fire moment sounds at their specific delay times within the line
+      clearMomentTimeouts()
+      if (block.momentAudio) {
+        scheduleMoment(momentRef, block.momentAudio, ambienceVol * (block.moment_volume || 0.9), block.moment1_delay || 0)
+      } else stopAudio(momentRef)
 
-      if (moment2Ref.current) {
-        if (block.moment2Audio) {
-          moment2Ref.current.src = `data:audio/mpeg;base64,${block.moment2Audio}`
-          moment2Ref.current.volume = ambienceVol * (block.moment2_volume || 0.9)
-          moment2Ref.current.loop = false
-          moment2Ref.current.play().catch(() => {})
-        } else stopAudio(moment2Ref)
-      }
+      if (block.moment2Audio) {
+        scheduleMoment(moment2Ref, block.moment2Audio, ambienceVol * (block.moment2_volume || 0.9), block.moment2_delay || 0)
+      } else stopAudio(moment2Ref)
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
         const baseVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
         const targetVol = baseVol * musicVol
+
+        // Music inertia: only switch tracks if 2 consecutive blocks recommend the same new track
+        const last2 = lastTwoMusicRef.current
+        last2.push(newTrack)
+        if (last2.length > 2) last2.shift()
+        const shouldSwitch = last2.length === 2 && last2[0] === last2[1]
+        const effectiveTrack = (shouldSwitch || !activeMusicTrackRef.current) ? newTrack : activeMusicTrackRef.current
 
         if (!activeMusicTrackRef.current) {
           activeMusicTrackRef.current = newTrack
@@ -309,15 +329,15 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
             } else { clearInterval(fadeIn); if (musicRef.current) musicRef.current.volume = targetVol }
           }, 50)
           fadeIntervalsRef.current.push(fadeIn)
-        } else if (newTrack !== activeMusicTrackRef.current) {
-          activeMusicTrackRef.current = newTrack
+        } else if (effectiveTrack !== activeMusicTrackRef.current) {
+          activeMusicTrackRef.current = effectiveTrack
           const fadeOut = setInterval(() => {
             if (musicRef.current && musicRef.current.volume > 0.02) {
               musicRef.current.volume = Math.max(0, musicRef.current.volume - 0.05)
             } else {
               clearInterval(fadeOut)
               if (musicRef.current) {
-                musicRef.current.src = newTrack
+                musicRef.current.src = effectiveTrack
                 musicRef.current.loop = true
                 musicRef.current.play().catch(() => {})
                 musicRef.current.volume = 0

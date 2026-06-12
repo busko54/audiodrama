@@ -105,54 +105,58 @@ async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion
       messages: [
         {
           role: 'system',
-          content: `You are a Hollywood audio drama sound designer. Your job is to make every scene feel cinematic and immersive.
+          content: `You are a disciplined BBC radio drama sound designer. Your guiding principle: LESS IS MORE. Silence and restraint are more powerful than constant noise. A sound effect that fires at exactly the right moment is worth ten random ones.
 
 Return a JSON object with these fields:
 
-"background1": The primary looping background sound that fits the PHYSICAL SETTING of this scene. Choose from: ${backgroundKeys}. ALWAYS return a value — never null. Think: where are we? Indoors by a fire? Outside in a storm? A ballroom?
-  EXCEPTION: If the line is a short title, dateline, header, memo, or chapter marker (e.g. "Jonathan Harker's Journal", "3rd May. Bistritz.", "Chapter I", "Mem., get recipe for Mina.", under 12 words with no described action or dialogue) — return "fireplace quiet" as a very soft background and nothing else. These moments should feel like near-silence with just the scratch of a quill.
+"background1": A looping ambient background that matches the physical location. Choose from: ${backgroundKeys}.
+  • EXCEPTION: Short journal headers, datelines, memos, or title lines under 12 words with no action (e.g. "Jonathan Harker's Journal", "3rd May. Bistritz.", "Mem., get recipe for Mina.") → return "fireplace quiet". These are near-silence moments.
+  • For all other lines, pick the sound that best matches WHERE the scene is set. If indoors at night → "fireplace" or "candle ambience". If outside in bad weather → "heavy rain" or "thunder storm". If travelling → "carriage interior".
+  • NEVER return null — always pick the location sound.
 
-"background2": A second optional ambient layer that adds depth. Same list. Return null if nothing adds value.
+"background2": A second ambient layer ONLY if it genuinely adds depth (e.g. rain on windows + fireplace together). Return null most of the time.
 
-"moment1": A one-shot sound effect triggered by THIS specific line. Choose from: ${momentKeys}. Apply these rules in priority order:
-  • SHORT MEMO/JOURNAL HEADER (matches the background1 exception above): return "quill writing" as moment1, null for moment2
-  • TRAVEL/ARRIVAL (pre-1900 settings): any mention of arriving, departing, visiting, journeying, carriages, horses → "horse carriage" + "horse neighing"
-  • DOORS: entering a room, door opening/closing, being shown in → "door creaking" or "door knock"
-  • KNOCKING: someone knocking, rapping, tapping at a door → "door knock"
-  • SLAMMING: anger + door, storming out, violent exit → "door slam"
-  • FOOTSTEPS: walking, pacing, approaching, crossing a room → "footsteps indoor" or "footsteps gravel" based on setting
-  • STAIRS: going up/downstairs, descending → "stairs creak"
-  • LIGHTNING: lightning, flash, electric, struck → "lightning crack"
-  • THUNDER: thunder described explicitly → "thunder boom"
-  • CHURCH/CEREMONY: bells, wedding, Sunday, prayer → "church bells" or "clock chime"
-  • WRITING: writing a letter, journal entry, signing → "quill writing"
-  • READING: opening a book, reading a letter → "book pages"
-  • TOAST/DRINK: raising a glass, toast, cheers → "glass clink toast"
-  • DRAMATIC REVEAL/SHOCK: shocking news, sudden realisation, gasp moment → "crowd gasp"
-  • FEMALE CHARACTER ENTRANCE: female character speaks for first time after narrator → "dress rustle"
-  • DEATH/VIOLENCE: falling, striking, collapsing → "body fall"
-  • DISTANT DANGER: far-off scream, something heard in distance → "scream distant"
-  • SILENCE/DISMISSAL: character ignores, makes no reply, deliberate silence → null + set pause_after to 2000
-  • If nothing fits naturally → null
+"moment1": A one-shot sound effect. THIS IS THE MOST IMPORTANT FIELD. Be very conservative — only add a sound if it will genuinely enhance the scene. Most lines should return null.
+  Only use sounds for these situations:
+  • SHORT MEMO/JOURNAL HEADER (matches background1 exception): "quill writing", fired at the start
+  • KNOCKING on a door: "door knock"
+  • DOOR OPENING/CLOSING explicitly described: "door creaking"
+  • ANGRY EXIT / DOOR SLAMMED: "door slam"
+  • FOOTSTEPS explicitly described (walking across room, pacing): "footsteps indoor" or "footsteps gravel"
+  • STAIRS explicitly described: "stairs creak"
+  • HORSE/CARRIAGE explicitly arriving or departing in a pre-1900 setting: "horse carriage"
+  • LIGHTNING explicitly described: "lightning crack"
+  • THUNDER explicitly described: "thunder boom"
+  • CHURCH BELLS explicitly mentioned: "church bells"
+  • CLOCK STRIKING explicitly mentioned: "clock chime"
+  • WRITING A LETTER OR JOURNAL explicitly described: "quill writing"
+  • TOAST / RAISING A GLASS explicitly described: "glass clink toast"
+  • FEMALE CHARACTER first appearance after narrator line: "dress rustle"
+  • DEATH / BODY FALLING explicitly described: "body fall"
+  • CROWD REACTING explicitly described: "crowd gasp" or "crowd cheer"
+  • If none of these apply exactly → return null. Do NOT add sounds just because a line mentions travel in general, or has any mild action.
 
-"moment2": Second one-shot sound, or null. Use for horse rule (horse carriage + horse neighing together).
+"moment1_delay": How many seconds into the line the sound should fire. This is critical for realism — the sound must play at the exact moment the action happens in the sentence, not at the beginning.
+  Examples:
+  • "He crossed the room and opened the door" — door creak fires near the end, delay = 3.5
+  • "She knocked twice before entering" — knock fires at the start, delay = 0.3
+  • "Suddenly, lightning split the sky" — lightning fires on "lightning", delay = 1.2
+  • "Jonathan Harker's Journal" — quill fires immediately, delay = 0.0
+  Estimate based on where in the sentence the action occurs. Average speech rate is ~130 words/minute.
+
+"moment2": Second one-shot sound, or null. Only for horse carriage arrival (add "horse neighing" as moment2).
+"moment2_delay": Delay in seconds for moment2. Usually moment1_delay + 1.0 for the horse pair.
 
 "music": Choose from: ${musicKeys}
-  • TENSE: tone is frantic/shout/commanding, emotion is terrified/horrified/fearful/desperate/anxious, or scene involves danger/confrontation → "regency-tense"
-  • ROMANTIC: tone is warm/solemn, emotion is warm/awestruck/tender, or scene involves love/admiration/longing → "regency-romantic"
-  • LIGHT: everything else → "regency-light"
+  • Danger, confrontation, fear, horror, desperation, frantic energy → "regency-tense"
+  • Love, admiration, longing, warmth, beauty → "regency-romantic"
+  • Everything else → "regency-light"
   NEVER return null.
 
-"pause_after": milliseconds of silence AFTER the line ends. Use:
-  • 2000 for: character ignores someone, makes no reply, deliberate silence, shocking revelation lands
-  • 1200 for: end of a dramatic speech, character exits, scene transition
-  • 0 for everything else
+"pause_after": Silence in ms AFTER the line. Use 2000 for deliberate silence/ignoring/shocking revelation. Use 1200 for dramatic speech endings or scene exits. Use 0 otherwise.
+"pause_before": Silence in ms BEFORE the line plays. Use 800 only before a genuinely shocking line that needs a beat. Use 0 otherwise.
 
-"pause_before": milliseconds of silence BEFORE the line plays. Use:
-  • 800 for: a shocking line that needs a beat before it lands, a line spoken after a long silence
-  • 0 for everything else
-
-Return ONLY valid JSON. No markdown. No backticks. No explanation.`
+Return ONLY valid JSON. No markdown. No backticks.`
         },
         {
           role: 'user',
@@ -174,18 +178,20 @@ Emotion: ${emotion || 'neutral'}`
   try {
     const parsed = JSON.parse(text)
     return {
-      background1: backgroundSounds[parsed.background1] ? parsed.background1 : null,
+      background1: backgroundSounds[parsed.background1] ? parsed.background1 : 'fireplace quiet',
       background2: backgroundSounds[parsed.background2] ? parsed.background2 : null,
       moment1: momentSounds[parsed.moment1] ? parsed.moment1 : null,
+      moment1_delay: parsed.moment1_delay || 0,
       moment2: momentSounds[parsed.moment2] ? parsed.moment2 : null,
+      moment2_delay: parsed.moment2_delay || 0,
       music: musicTracks[parsed.music] ? parsed.music : 'regency-light',
       pause_after: parsed.pause_after || 0,
       pause_before: parsed.pause_before || 0,
-      noMatch: !backgroundSounds[parsed.background1],
+      noMatch: false,
     }
   } catch (e) {
     console.error('JSON parse error:', e.message, 'Raw text:', text)
-    return { background1: null, background2: null, moment1: null, moment2: null, music: 'regency-light', pause_after: 0, pause_before: 0, noMatch: true }
+    return { background1: 'fireplace quiet', background2: null, moment1: null, moment1_delay: 0, moment2: null, moment2_delay: 0, music: 'regency-light', pause_after: 0, pause_before: 0, noMatch: true }
   }
 }
 
@@ -242,6 +248,8 @@ export async function POST(request) {
       musicTrack: musicTracks[picked.music],
       pause_after: picked.pause_after,
       pause_before: picked.pause_before,
+      moment1_delay: picked.moment1_delay,
+      moment2_delay: picked.moment2_delay,
       noMatch: picked.noMatch,
     })
 
