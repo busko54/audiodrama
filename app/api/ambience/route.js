@@ -32,9 +32,9 @@ const backgroundSounds = {
   'harbour docks':        '398728',
 
   // Atmosphere
-  'tension drone':        '458811',
-  'eerie silence':        '399729',
-  'gothic atmosphere':    '487669',
+  'tension drone':        '531915',
+  'eerie silence':        '519863',
+  'gothic atmosphere':    '531915',
 }
 
 // ── ONE-SHOT MOMENT SOUNDS ────────────────────────────────────────────────────
@@ -110,6 +110,7 @@ async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion
 Return a JSON object with these fields:
 
 "background1": The primary looping background sound that fits the PHYSICAL SETTING of this scene. Choose from: ${backgroundKeys}. ALWAYS return a value — never null. Think: where are we? Indoors by a fire? Outside in a storm? A ballroom?
+  EXCEPTION: If the line is a short title, dateline, header, or chapter marker (e.g. "Jonathan Harker's Journal", "3rd May. Bistritz.", "Chapter I", under 8 words with no action) — return "fireplace quiet" as a very soft background and nothing else. These moments should feel like near-silence.
 
 "background2": A second optional ambient layer that adds depth. Same list. Return null if nothing adds value.
 
