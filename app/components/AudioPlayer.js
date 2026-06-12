@@ -192,15 +192,25 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       setTotalBlocks(allBlocks.length)
       const results = []
 
+      // Get the whole-chapter sound plan in one GPT call
+      const planRes = await fetch('/api/soundplan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blocks: allBlocks, setting })
+      })
+      const planData = planRes.ok ? await planRes.json() : { blockMap: {} }
+      const blockMap = planData.blockMap || {}
+
       for (let i = 0; i < allBlocks.length; i++) {
         setGeneratingIndex(i)
         const stitchRes = await fetch('/api/stitch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            blocks: [allBlocks[i]], setting,
+            blocks: [allBlocks[i]],
             bookId, chapterNumber,
-            blockIndex: i, previousSpeaker: i > 0 ? allBlocks[i - 1].speaker : null
+            blockIndex: i,
+            preplannedSound: blockMap[i] || {}
           })
         })
         if (!stitchRes.ok) throw new Error(`Failed to generate scene ${i + 1}`)
