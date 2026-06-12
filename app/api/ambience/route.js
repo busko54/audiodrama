@@ -110,11 +110,12 @@ async function pickSounds(setting, line, speaker, previousSpeaker, tone, emotion
 Return a JSON object with these fields:
 
 "background1": The primary looping background sound that fits the PHYSICAL SETTING of this scene. Choose from: ${backgroundKeys}. ALWAYS return a value — never null. Think: where are we? Indoors by a fire? Outside in a storm? A ballroom?
-  EXCEPTION: If the line is a short title, dateline, header, or chapter marker (e.g. "Jonathan Harker's Journal", "3rd May. Bistritz.", "Chapter I", under 8 words with no action) — return "fireplace quiet" as a very soft background and nothing else. These moments should feel like near-silence.
+  EXCEPTION: If the line is a short title, dateline, header, memo, or chapter marker (e.g. "Jonathan Harker's Journal", "3rd May. Bistritz.", "Chapter I", "Mem., get recipe for Mina.", under 12 words with no described action or dialogue) — return "fireplace quiet" as a very soft background and nothing else. These moments should feel like near-silence with just the scratch of a quill.
 
 "background2": A second optional ambient layer that adds depth. Same list. Return null if nothing adds value.
 
 "moment1": A one-shot sound effect triggered by THIS specific line. Choose from: ${momentKeys}. Apply these rules in priority order:
+  • SHORT MEMO/JOURNAL HEADER (matches the background1 exception above): return "quill writing" as moment1, null for moment2
   • TRAVEL/ARRIVAL (pre-1900 settings): any mention of arriving, departing, visiting, journeying, carriages, horses → "horse carriage" + "horse neighing"
   • DOORS: entering a room, door opening/closing, being shown in → "door creaking" or "door knock"
   • KNOCKING: someone knocking, rapping, tapping at a door → "door knock"
