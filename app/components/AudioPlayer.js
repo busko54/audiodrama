@@ -52,15 +52,36 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     momentTimeoutsRef.current = []
   }
 
-  const scheduleMoment = (ref, audioData, vol, delaySeconds) => {
+  const scheduleMoment = (ref, audioData, vol, delaySeconds, maxDuration = 7) => {
     if (!ref.current || !audioData) return
     const ms = Math.round((delaySeconds || 0) * 1000)
+
+    // Preload the audio immediately so it's ready to play with no decode delay
+    ref.current.src = `data:audio/mpeg;base64,${audioData}`
+    ref.current.volume = 0
+    ref.current.loop = false
+    ref.current.load()
+
     const id = setTimeout(() => {
       if (!ref.current) return
-      ref.current.src = `data:audio/mpeg;base64,${audioData}`
       ref.current.volume = vol
-      ref.current.loop = false
       ref.current.play().catch(() => {})
+      // Auto-stop after maxDuration seconds so long files don't drag on
+      const stopId = setTimeout(() => {
+        if (!ref.current) return
+        const fadeId = setInterval(() => {
+          if (!ref.current || ref.current.volume <= 0.05) {
+            clearInterval(fadeId)
+            if (ref.current) {
+              ref.current.pause()
+              ref.current.volume = vol
+            }
+          } else {
+            ref.current.volume = Math.max(0, ref.current.volume - 0.1)
+          }
+        }, 80)
+      }, maxDuration * 1000)
+      momentTimeoutsRef.current.push(stopId)
     }, ms)
     momentTimeoutsRef.current.push(id)
   }
