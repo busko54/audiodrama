@@ -88,9 +88,72 @@ export const BACKGROUND_SOUNDS = backgroundSounds
 export const MOMENT_SOUNDS = momentSounds
 export const MUSIC_TRACKS = musicTracks
 
+// Hardcoded sound plans — bypass GPT for precise, hand-crafted cues
+const HARDCODED_PLANS = {
+  'dracula:1': {
+    scenes: [
+      { from: 0,  to: 2,  background1: 'fireplace quiet',  background2: null,             music: 'light' },
+      { from: 3,  to: 8,  background1: 'train interior',   background2: null,             music: 'light' },
+      { from: 9,  to: 14, background1: 'dining room',      background2: null,             music: 'light' },
+      { from: 15, to: 17, background1: 'fireplace quiet',  background2: null,             music: 'light' },
+      { from: 18, to: 19, background1: 'wind howling',     background2: 'fireplace quiet', music: 'tense' },
+      { from: 20, to: 25, background1: 'gothic atmosphere',background2: null,             music: 'tense' },
+      { from: 26, to: 30, background1: 'eerie night',      background2: null,             music: 'tense' },
+      { from: 31, to: 34, background1: 'train interior',   background2: null,             music: 'light' },
+    ],
+    moments: [
+      { blockIndex: 3,  sound: 'train whistle',   delay: 14.0, sound2: null,              delay2: null },
+      { blockIndex: 4,  sound: 'footsteps street',delay: 11.0, sound2: null,              delay2: null },
+      { blockIndex: 9,  sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
+      { blockIndex: 12, sound: 'waiter whistle',  delay: 1.0,  sound2: null,              delay2: null },
+      { blockIndex: 19, sound: 'scream distant',  delay: 8.0,  sound2: null,              delay2: null },
+      { blockIndex: 27, sound: 'dog howling',     delay: 0.5,  sound2: 'drinking gulping', delay2: 16.0 },
+      { blockIndex: 28, sound: 'door knock',      delay: 3.0,  sound2: null,              delay2: null },
+      { blockIndex: 31, sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
+      { blockIndex: 33, sound: 'train whistle',   delay: 4.0,  sound2: null,              delay2: null },
+    ],
+    pauses: [
+      { blockIndex: 0,  pause_before: 0, pause_after: 2000 },
+      { blockIndex: 1,  pause_before: 0, pause_after: 1500 },
+      { blockIndex: 2,  pause_before: 0, pause_after: 1000 },
+      { blockIndex: 30, pause_before: 0, pause_after: 1500 },
+    ]
+  }
+}
+
+function buildBlockMap(plan, blocks) {
+  const blockMap = {}
+  for (let i = 0; i < blocks.length; i++) {
+    const scene   = plan.scenes.find(s => i >= s.from && i <= s.to)
+    const moment  = plan.moments?.find(m => m.blockIndex === i)
+    const pause   = plan.pauses?.find(p => p.blockIndex === i)
+    blockMap[i] = {
+      background1:    backgroundSounds[scene?.background1]  ? scene.background1  : 'fireplace quiet',
+      background2:    backgroundSounds[scene?.background2]  ? scene.background2  : null,
+      music:          musicTracks[scene?.music]              ? scene.music        : 'light',
+      moment1:        momentSounds[moment?.sound]            ? moment.sound       : null,
+      moment1_delay:  moment?.delay  || 0,
+      moment2:        momentSounds[moment?.sound2]           ? moment.sound2      : null,
+      moment2_delay:  moment?.delay2 || 0,
+      pause_before:   pause?.pause_before || 0,
+      pause_after:    pause?.pause_after  || 0,
+    }
+  }
+  return blockMap
+}
+
 export async function POST(request) {
   try {
-    const { blocks, setting } = await request.json()
+    const { blocks, setting, bookId, chapterNumber } = await request.json()
+
+    // Use hardcoded plan if available — no GPT call needed
+    const planKey = bookId && chapterNumber ? `${bookId}:${chapterNumber}` : null
+    if (planKey && HARDCODED_PLANS[planKey]) {
+      const plan = HARDCODED_PLANS[planKey]
+      const blockMap = buildBlockMap(plan, blocks)
+      console.log(`Using hardcoded plan for ${planKey}`)
+      return Response.json({ plan, blockMap })
+    }
 
     const blockSummary = blocks.map((b, i) =>
       `[${i}] ${b.speaker}: "${b.line.slice(0, 150)}${b.line.length > 150 ? '...' : ''}" (tone: ${b.tone || 'normal'}, emotion: ${b.emotion || 'neutral'})`
@@ -181,36 +244,9 @@ ${blockSummary}`
     console.log('Sound plan:', text)
 
     const plan = JSON.parse(text)
-
     console.log('Sound plan moments:', JSON.stringify(plan.moments))
-    console.log('Sound plan scenes:', JSON.stringify(plan.scenes?.slice(0, 5)))
 
-    const blockMap = {}
-    for (let i = 0; i < blocks.length; i++) {
-      const scene = plan.scenes.find(s => i >= s.from && i <= s.to)
-      const moment = plan.moments?.find(m => m.blockIndex === i)
-      const pause = plan.pauses?.find(p => p.blockIndex === i)
-
-      const moment1Valid = momentSounds[moment?.sound]
-      const moment2Valid = momentSounds[moment?.sound2]
-
-      if (moment) {
-        console.log(`Block ${i} moment: sound="${moment.sound}" valid=${!!moment1Valid} id=${momentSounds[moment.sound]}`)
-      }
-
-      blockMap[i] = {
-        background1: backgroundSounds[scene?.background1] ? scene.background1 : 'fireplace quiet',
-        background2: backgroundSounds[scene?.background2] ? scene.background2 : null,
-        music: musicTracks[scene?.music] ? scene.music : 'light',
-        moment1: moment1Valid ? moment.sound : null,
-        moment1_delay: moment?.delay || 0,
-        moment2: moment2Valid ? moment.sound2 : null,
-        moment2_delay: moment?.delay2 || 0,
-        pause_before: pause?.pause_before || 0,
-        pause_after: pause?.pause_after || 0,
-      }
-    }
-
+    const blockMap = buildBlockMap(plan, blocks)
     return Response.json({ plan, blockMap })
 
   } catch (error) {

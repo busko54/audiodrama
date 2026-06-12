@@ -217,7 +217,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       const planRes = await fetch('/api/soundplan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blocks: allBlocks, setting })
+        body: JSON.stringify({ blocks: allBlocks, setting, bookId, chapterNumber })
       })
       const planData = planRes.ok ? await planRes.json() : { blockMap: {} }
       const blockMap = planData.blockMap || {}
