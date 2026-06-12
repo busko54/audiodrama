@@ -52,7 +52,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     momentTimeoutsRef.current = []
   }
 
-  const scheduleMoment = (ref, audioData, vol, delaySeconds, maxDuration = 7) => {
+  const scheduleMoment = (ref, audioData, vol, delaySeconds, maxDuration = 12) => {
     if (!ref.current || !audioData) return
     const ms = Math.round((delaySeconds || 0) * 1000)
 
@@ -129,6 +129,23 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     ref.current.pause()
     ref.current.removeAttribute('src')
     ref.current.load()
+  }
+
+  const fadeOutMoment = (ref, durationMs = 3000) => {
+    if (!ref.current || ref.current.paused) return
+    const startVol = ref.current.volume
+    const steps = 20
+    const interval = durationMs / steps
+    const decrement = startVol / steps
+    const id = setInterval(() => {
+      if (!ref.current || ref.current.volume <= 0.02) {
+        clearInterval(id)
+        if (ref.current) { ref.current.pause(); ref.current.removeAttribute('src'); ref.current.load() }
+      } else {
+        ref.current.volume = Math.max(0, ref.current.volume - decrement)
+      }
+    }, interval)
+    fadeIntervalsRef.current.push(id)
   }
 
   const pauseAllAudio = () => {
@@ -339,11 +356,11 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       clearMomentTimeouts()
       if (block.momentAudio) {
         scheduleMoment(momentRef, block.momentAudio, Math.min(1.0, voiceVol * 1.2), block.moment1_delay || 0)
-      } else stopAudio(momentRef)
+      } else fadeOutMoment(momentRef, 3000)
 
       if (block.moment2Audio) {
         scheduleMoment(moment2Ref, block.moment2Audio, Math.min(1.0, voiceVol * 1.2), block.moment2_delay || 0)
-      } else stopAudio(moment2Ref)
+      } else fadeOutMoment(moment2Ref, 3000)
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'

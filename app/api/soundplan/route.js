@@ -102,7 +102,7 @@ const HARDCODED_PLANS = {
       { from: 31, to: 34, background1: 'train interior',   background2: null,             music: 'light' },
     ],
     moments: [
-      { blockIndex: 3,  sound: 'train whistle',   delay: 14.0, sound2: null,              delay2: null },
+      { blockIndex: 3,  sound: 'train whistle',   delay: 13.0, sound2: null,              delay2: null },
       { blockIndex: 4,  sound: 'footsteps street',delay: 11.0, sound2: null,              delay2: null },
       { blockIndex: 9,  sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
       { blockIndex: 12, sound: 'waiter whistle',  delay: 1.0,  sound2: null,              delay2: null },
