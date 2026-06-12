@@ -186,18 +186,16 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
     }
   }, [isPlaying, currentBlock, playFrom])
 
-  const clearCacheAndRegenerate = useCallback(async () => {
-    try {
-      await fetch('/api/clear-cache', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookId, chapterNumber })
-      })
-    } catch {}
-    runFullTest()
-  }, [bookId, chapterNumber, runFullTest])
-
-  const runFullTest = useCallback(async () => {
+  const runFullTest = useCallback(async (clearCache = false) => {
+    if (clearCache) {
+      try {
+        await fetch('/api/clear-cache', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookId, chapterNumber })
+        })
+      } catch {}
+    }
     setLoading(true)
     setError(null)
     setBlocks([])
@@ -559,7 +557,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
                 <span style={{ fontSize: '10px', letterSpacing: '2px', color: '#8a7050', textTransform: 'uppercase' }}>
                   {currentBlock + 1} / {blocks.length}
                 </span>
-                <button onClick={clearCacheAndRegenerate} title="Clear cache and regenerate" style={{ background: 'transparent', border: 'none', color: '#5a4030', fontSize: '11px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', padding: 0 }}>
+                <button onClick={() => runFullTest(true)} title="Clear cache and regenerate" style={{ background: 'transparent', border: 'none', color: '#5a4030', fontSize: '11px', cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', padding: 0 }}>
                   ↺ Regenerate
                 </button>
               </div>
