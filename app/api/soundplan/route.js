@@ -38,8 +38,8 @@ const backgroundSounds = {
 
 const momentSounds = {
   // Transport
-  'train whistle':        '268060',
-  'train passing':        '507389',
+  'train whistle':        '811510',
+  'train passing':        '365917',
   'horse carriage':       '631829',
   'horse neighing':       '655262',
   'horse hooves':         '523896',
@@ -48,22 +48,22 @@ const momentSounds = {
   'door knock':           '242740',
   'door slam':            '264594',
   'footsteps indoor':     '572752',
-  'footsteps street':     '521112',
+  'footsteps street':     '166306',
   'footsteps gravel':     '396895',
   'stairs creak':         '399823',
   // Animals
-  'dog howling':          '398073',
-  'wolves close':         '395668',
+  'dog howling':          '443046',
+  'wolves close':         '378334',
   // Weather
   'lightning crack':      '251635',
   'thunder boom':         '398032',
   'wind gust':            '395806',
   // Eating & drinking
-  'eating chewing':       '399720',
-  'drinking gulping':     '399718',
+  'eating chewing':       '594666',
+  'drinking gulping':     '411172',
   'spoon bowl':           '395267',
   // Social & attention
-  'waiter whistle':       '399833',
+  'waiter whistle':       '499650',
   'finger snap':          '399833',
   'church bells':         '480014',
   'clock chime':          '411888',
