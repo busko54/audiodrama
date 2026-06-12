@@ -83,7 +83,8 @@ export default function TestPage() {
           blocks: [blocks[index]],
           bookId, chapterNumber,
           blockIndex: index,
-          preplannedSound: soundPlan
+          preplannedSound: soundPlan,
+          skipCache: true
         })
       })
       const data = await res.json()

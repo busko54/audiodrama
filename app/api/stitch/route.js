@@ -97,7 +97,7 @@ async function fetchFreesound(soundId) {
 
 export async function POST(request) {
   try {
-    const { blocks, bookId, chapterNumber, blockIndex, preplannedSound } = await request.json()
+    const { blocks, bookId, chapterNumber, blockIndex, preplannedSound, skipCache } = await request.json()
 
     const results = []
 
@@ -105,7 +105,7 @@ export async function POST(request) {
       const block = blocks[i]
       const actualIndex = blockIndex ?? i
 
-      if (bookId && chapterNumber) {
+      if (!skipCache && bookId && chapterNumber) {
         const cached = await getCachedBlock(bookId, chapterNumber, actualIndex)
         if (cached) {
           console.log(`Block ${actualIndex} served from cache`)
