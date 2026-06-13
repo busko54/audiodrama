@@ -5,7 +5,7 @@ const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator', 'dracula_narrator']
 
 // Single source of truth for one-shot effect loudness — keep effects
 // well under the voice so the narration always stays intelligible
-const MOMENT_VOL = 0.35
+const MOMENT_VOL = 0.6
 
 const BOOK_META = {
   'dracula': {
@@ -385,7 +385,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
-        const baseVol = hasMoment ? 0.2 : isNarrator ? 0.6 : 0.45
+        const baseVol = hasMoment ? 0.12 : isNarrator ? 0.6 : 0.45
         const targetVol = baseVol * musicVol
 
         // Music inertia: only switch tracks if 2 consecutive blocks recommend the same new track
