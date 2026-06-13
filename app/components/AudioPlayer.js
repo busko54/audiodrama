@@ -7,6 +7,18 @@ const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator', 'dracula_narrator']
 // well under the voice so the narration always stays intelligible
 const MOMENT_VOL = 0.6
 
+// Client-side per-sound volume overrides, keyed by sound name. Takes priority
+// over the value baked into the cached block, so loudness can be tuned here
+// without regenerating any audio. Anything not listed falls back to the block.
+const MOMENT_VOL_OVERRIDES = {
+  'train whistle':  0.25,
+  'train passing':  0.4,
+  'scream distant': 0.4,
+  'dog howling':    0.8,
+  'wolves close':   0.7,
+  'waiter whistle': 0.6,
+}
+
 const BOOK_META = {
   'dracula': {
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg',
@@ -369,7 +381,8 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
         if (block.momentAudio) {
-          const v1 = MOMENT_VOL * ambienceVol * (block.moment_volume ?? 1.0)
+          const mult1 = MOMENT_VOL_OVERRIDES[block.moment1_sound] ?? block.moment_volume ?? 1.0
+          const v1 = MOMENT_VOL * ambienceVol * mult1
           scheduleMoment(momentRef, block.momentAudio, v1, clampDelay(block.moment1_delay || 0))
         } else {
           const id = setTimeout(() => fadeOutMoment(momentRef, 3000), 4000)
@@ -377,7 +390,8 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         }
 
         if (block.moment2Audio) {
-          const v2 = MOMENT_VOL * ambienceVol * (block.moment2_volume ?? 1.0)
+          const mult2 = MOMENT_VOL_OVERRIDES[block.moment2_sound] ?? block.moment2_volume ?? 1.0
+          const v2 = MOMENT_VOL * ambienceVol * mult2
           scheduleMoment(moment2Ref, block.moment2Audio, v2, clampDelay(block.moment2_delay || 0))
         } else {
           const id = setTimeout(() => fadeOutMoment(moment2Ref, 3000), 4000)

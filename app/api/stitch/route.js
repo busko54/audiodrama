@@ -157,6 +157,8 @@ export async function POST(request) {
         pause_after: soundPlan.pause_after || 0,
         ambience_volume: 0.25,
         ambience2_volume: 0.25,
+        moment1_sound: soundPlan.moment1 || null,
+        moment2_sound: soundPlan.moment2 || null,
         moment_volume: MOMENT_VOLUMES[soundPlan.moment1] ?? 1.0,
         moment2_volume: MOMENT_VOLUMES[soundPlan.moment2] ?? 1.0,
       }
