@@ -370,11 +370,17 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
 
         if (block.momentAudio) {
           scheduleMoment(momentRef, block.momentAudio, MOMENT_VOL * ambienceVol, clampDelay(block.moment1_delay || 0))
-        } else fadeOutMoment(momentRef, 3000)
+        } else {
+          const id = setTimeout(() => fadeOutMoment(momentRef, 3000), 4000)
+          momentTimeoutsRef.current.push(id)
+        }
 
         if (block.moment2Audio) {
           scheduleMoment(moment2Ref, block.moment2Audio, MOMENT_VOL * ambienceVol, clampDelay(block.moment2_delay || 0))
-        } else fadeOutMoment(moment2Ref, 3000)
+        } else {
+          const id = setTimeout(() => fadeOutMoment(moment2Ref, 3000), 4000)
+          momentTimeoutsRef.current.push(id)
+        }
       }
 
       if (block.audio && voiceRef.current && voiceRef.current.readyState < 1) {
