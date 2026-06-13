@@ -354,15 +354,30 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         }
       }
 
-      // Fire moment sounds at their specific delay times within the line
+      // Fire moment sounds at their specific delay times within the line.
+      // Delays are estimates from the sound plan — clamp them to the real
+      // voice duration so a sound cued near the end of a line still fires
+      // before the block advances (which cancels pending timers).
       clearMomentTimeouts()
-      if (block.momentAudio) {
-        scheduleMoment(momentRef, block.momentAudio, Math.min(1.0, voiceVol * 1.2), block.moment1_delay || 0)
-      } else fadeOutMoment(momentRef, 3000)
+      const scheduleBlockMoments = () => {
+        const dur = voiceRef.current?.duration
+        const playDur = dur && isFinite(dur) ? dur / (speed || 1) : null
+        const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
-      if (block.moment2Audio) {
-        scheduleMoment(moment2Ref, block.moment2Audio, Math.min(1.0, voiceVol * 1.2), block.moment2_delay || 0)
-      } else fadeOutMoment(moment2Ref, 3000)
+        if (block.momentAudio) {
+          scheduleMoment(momentRef, block.momentAudio, Math.min(1.0, voiceVol * 1.2), clampDelay(block.moment1_delay || 0))
+        } else fadeOutMoment(momentRef, 3000)
+
+        if (block.moment2Audio) {
+          scheduleMoment(moment2Ref, block.moment2Audio, Math.min(1.0, voiceVol * 1.2), clampDelay(block.moment2_delay || 0))
+        } else fadeOutMoment(moment2Ref, 3000)
+      }
+
+      if (block.audio && voiceRef.current && voiceRef.current.readyState < 1) {
+        voiceRef.current.addEventListener('loadedmetadata', scheduleBlockMoments, { once: true })
+      } else {
+        scheduleBlockMoments()
+      }
 
       if (musicRef.current) {
         const newTrack = block.musicTrack || '/music/light_normal.mp3'
