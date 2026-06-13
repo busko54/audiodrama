@@ -369,14 +369,16 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
         if (block.momentAudio) {
-          scheduleMoment(momentRef, block.momentAudio, MOMENT_VOL * ambienceVol, clampDelay(block.moment1_delay || 0))
+          const v1 = MOMENT_VOL * ambienceVol * (block.moment_volume ?? 1.0)
+          scheduleMoment(momentRef, block.momentAudio, v1, clampDelay(block.moment1_delay || 0))
         } else {
           const id = setTimeout(() => fadeOutMoment(momentRef, 3000), 4000)
           momentTimeoutsRef.current.push(id)
         }
 
         if (block.moment2Audio) {
-          scheduleMoment(moment2Ref, block.moment2Audio, MOMENT_VOL * ambienceVol, clampDelay(block.moment2_delay || 0))
+          const v2 = MOMENT_VOL * ambienceVol * (block.moment2_volume ?? 1.0)
+          scheduleMoment(moment2Ref, block.moment2Audio, v2, clampDelay(block.moment2_delay || 0))
         } else {
           const id = setTimeout(() => fadeOutMoment(moment2Ref, 3000), 4000)
           momentTimeoutsRef.current.push(id)

@@ -84,8 +84,26 @@ const musicTracks = {
   'romantic': '/music/romantic.mp3',
 }
 
+// Per-sound loudness multipliers (0–1). Freesound files vary wildly in
+// inherent volume, so loud recordings get turned down here. Anything not
+// listed defaults to 1.0 (uses the global moment volume as-is).
+const momentVolumes = {
+  'train whistle':    0.25,
+  'train passing':    0.4,
+  'scream distant':   0.4,
+  'church bells':     0.5,
+  'thunder boom':     0.5,
+  'lightning crack':  0.5,
+  'dog howling':      0.8,
+  'wolves close':     0.7,
+  'waiter whistle':   0.6,
+  'door knock':       0.7,
+  'door slam':        0.6,
+}
+
 export const BACKGROUND_SOUNDS = backgroundSounds
 export const MOMENT_SOUNDS = momentSounds
+export const MOMENT_VOLUMES = momentVolumes
 export const MUSIC_TRACKS = musicTracks
 
 // Hardcoded sound plans — bypass GPT for precise, hand-crafted cues

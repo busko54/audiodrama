@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getCachedBlock, cacheBlock } from '@/lib/cache'
-import { BACKGROUND_SOUNDS, MOMENT_SOUNDS, MUSIC_TRACKS } from '@/app/api/soundplan/route'
+import { BACKGROUND_SOUNDS, MOMENT_SOUNDS, MOMENT_VOLUMES, MUSIC_TRACKS } from '@/app/api/soundplan/route'
 
 const voiceMap = {
   'narrator':          'DEvZo8VdnUy6pZ4CSwUB',
@@ -157,8 +157,8 @@ export async function POST(request) {
         pause_after: soundPlan.pause_after || 0,
         ambience_volume: 0.25,
         ambience2_volume: 0.25,
-        moment_volume: 0.85,
-        moment2_volume: 0.85,
+        moment_volume: MOMENT_VOLUMES[soundPlan.moment1] ?? 1.0,
+        moment2_volume: MOMENT_VOLUMES[soundPlan.moment2] ?? 1.0,
       }
 
       if (bookId && chapterNumber) {
