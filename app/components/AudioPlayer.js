@@ -365,11 +365,11 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
         if (block.momentAudio) {
-          scheduleMoment(momentRef, block.momentAudio, Math.min(1.0, voiceVol * 1.2), clampDelay(block.moment1_delay || 0))
+          scheduleMoment(momentRef, block.momentAudio, 0.4 * voiceVol, clampDelay(block.moment1_delay || 0))
         } else fadeOutMoment(momentRef, 3000)
 
         if (block.moment2Audio) {
-          scheduleMoment(moment2Ref, block.moment2Audio, Math.min(1.0, voiceVol * 1.2), clampDelay(block.moment2_delay || 0))
+          scheduleMoment(moment2Ref, block.moment2Audio, 0.4 * voiceVol, clampDelay(block.moment2_delay || 0))
         } else fadeOutMoment(moment2Ref, 3000)
       }
 
