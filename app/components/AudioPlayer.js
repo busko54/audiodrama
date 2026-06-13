@@ -204,7 +204,9 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   }, [isPlaying, currentBlock, playFrom])
 
   const runFullTest = useCallback(async (clearCache = false) => {
-    if (clearCache) {
+    // Only a literal `true` clears the cache — guards against event objects
+    // being passed in as the first argument from onClick handlers
+    if (clearCache === true) {
       try {
         await fetch('/api/clear-cache', {
           method: 'POST',
@@ -556,7 +558,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           {error ? (
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: '#8b3030', fontSize: '13px', letterSpacing: '1px', marginBottom: '1.5rem', fontStyle: 'italic' }}>{error}</div>
-              <button onClick={runFullTest} style={{ background: 'transparent', border: '1px solid #5a3520', color: '#c9a96e', padding: '10px 24px', borderRadius: '6px', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => runFullTest(false)} style={{ background: 'transparent', border: '1px solid #5a3520', color: '#c9a96e', padding: '10px 24px', borderRadius: '6px', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'inherit' }}>
                 Try Again
               </button>
             </div>
@@ -608,7 +610,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
           <button onClick={() => currentBlock > 0 && !loading && playFrom(currentBlock - 1)} disabled={currentBlock <= 0 || loading} style={{ background: 'transparent', border: 'none', color: currentBlock > 0 && !loading ? '#8a6040' : '#2a1a0a', fontSize: '24px', cursor: currentBlock > 0 && !loading ? 'pointer' : 'default', transition: 'color 0.3s', padding: '8px', lineHeight: 1 }}>‹</button>
 
           <button
-            onClick={!loading ? (blocks.length > 0 ? handlePlayPause : runFullTest) : undefined}
+            onClick={!loading ? (blocks.length > 0 ? handlePlayPause : () => runFullTest(false)) : undefined}
             disabled={loading}
             style={{ width: '68px', height: '68px', borderRadius: '50%', background: 'linear-gradient(135deg, #2a1a0a, #3d2510)', border: '1px solid #5a3520', color: loading ? '#6a5035' : '#c9a96e', fontSize: blocks.length === 0 || loading ? '14px' : '22px', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s', boxShadow: isPlaying ? '0 0 24px rgba(180,120,40,0.25)' : 'none', letterSpacing: blocks.length === 0 ? '1px' : '0', fontFamily: 'inherit', flexShrink: 0 }}
           >
