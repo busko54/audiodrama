@@ -62,6 +62,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   const beatRef = useRef(null)
   const momentTimeoutsRef = useRef([])
   const lastTwoMusicRef = useRef([]) // music inertia: only change after 2 consecutive same recommendations
+  const blockMapRef = useRef({}) // sound plan per block (free, hardcoded) — source of sound names for volume lookup
 
   const clearMomentTimeouts = () => {
     momentTimeoutsRef.current.forEach(id => clearTimeout(id))
@@ -265,6 +266,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
       })
       const planData = planRes.ok ? await planRes.json() : { blockMap: {} }
       const blockMap = planData.blockMap || {}
+      blockMapRef.current = blockMap
 
       for (let i = 0; i < allBlocks.length; i++) {
         setGeneratingIndex(i)
@@ -380,8 +382,12 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         const playDur = dur && isFinite(dur) ? dur / (speed || 1) : null
         const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
+        const plan = blockMapRef.current[currentBlock] || {}
+        const sound1Name = plan.moment1 ?? block.moment1_sound
+        const sound2Name = plan.moment2 ?? block.moment2_sound
+
         if (block.momentAudio) {
-          const mult1 = MOMENT_VOL_OVERRIDES[block.moment1_sound] ?? block.moment_volume ?? 1.0
+          const mult1 = MOMENT_VOL_OVERRIDES[sound1Name] ?? block.moment_volume ?? 1.0
           const v1 = MOMENT_VOL * ambienceVol * mult1
           scheduleMoment(momentRef, block.momentAudio, v1, clampDelay(block.moment1_delay || 0))
         } else {
@@ -390,7 +396,7 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         }
 
         if (block.moment2Audio) {
-          const mult2 = MOMENT_VOL_OVERRIDES[block.moment2_sound] ?? block.moment2_volume ?? 1.0
+          const mult2 = MOMENT_VOL_OVERRIDES[sound2Name] ?? block.moment2_volume ?? 1.0
           const v2 = MOMENT_VOL * ambienceVol * mult2
           scheduleMoment(moment2Ref, block.moment2Audio, v2, clampDelay(block.moment2_delay || 0))
         } else {
