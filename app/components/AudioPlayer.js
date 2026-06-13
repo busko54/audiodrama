@@ -3,6 +3,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 
 const NARRATOR_SPEAKERS = ['pp_narrator', 'narrator', 'dracula_narrator']
 
+// Single source of truth for one-shot effect loudness — keep effects
+// well under the voice so the narration always stays intelligible
+const MOMENT_VOL = 0.35
+
 const BOOK_META = {
   'dracula': {
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Dracula_1st_ed_cover_reproduction.jpg/800px-Dracula_1st_ed_cover_reproduction.jpg',
@@ -110,8 +114,8 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
   useEffect(() => {
     if (ambienceRef.current && ambienceRef.current.src) ambienceRef.current.volume = ambienceVol * 0.25
     if (ambience2Ref.current && ambience2Ref.current.src) ambience2Ref.current.volume = ambienceVol * 0.3
-    if (momentRef.current && momentRef.current.src) momentRef.current.volume = ambienceVol * 0.9
-    if (moment2Ref.current && moment2Ref.current.src) moment2Ref.current.volume = ambienceVol * 0.9
+    if (momentRef.current && momentRef.current.src) momentRef.current.volume = ambienceVol * MOMENT_VOL
+    if (moment2Ref.current && moment2Ref.current.src) moment2Ref.current.volume = ambienceVol * MOMENT_VOL
   }, [ambienceVol])
 
   // Apply speed changes live
@@ -365,11 +369,11 @@ export default function AudioPlayer({ bookId, chapterNumber, subtitle }) {
         const clampDelay = (d) => playDur ? Math.min(d, Math.max(0, playDur - 2)) : d
 
         if (block.momentAudio) {
-          scheduleMoment(momentRef, block.momentAudio, 0.4 * voiceVol, clampDelay(block.moment1_delay || 0))
+          scheduleMoment(momentRef, block.momentAudio, MOMENT_VOL * ambienceVol, clampDelay(block.moment1_delay || 0))
         } else fadeOutMoment(momentRef, 3000)
 
         if (block.moment2Audio) {
-          scheduleMoment(moment2Ref, block.moment2Audio, 0.4 * voiceVol, clampDelay(block.moment2_delay || 0))
+          scheduleMoment(moment2Ref, block.moment2Audio, MOMENT_VOL * ambienceVol, clampDelay(block.moment2_delay || 0))
         } else fadeOutMoment(moment2Ref, 3000)
       }
 
