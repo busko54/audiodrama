@@ -107,7 +107,7 @@ const HARDCODED_PLANS = {
       { blockIndex: 9,  sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
       { blockIndex: 12, sound: 'waiter whistle',  delay: 1.0,  sound2: null,              delay2: null },
       { blockIndex: 19, sound: 'scream distant',  delay: 8.0,  sound2: null,              delay2: null },
-      { blockIndex: 27, sound: 'dog howling',     delay: 0.5,  sound2: 'drinking gulping', delay2: 16.0 },
+      { blockIndex: 27, sound: 'dog howling',     delay: 0.5,  sound2: 'drinking gulping', delay2: 9.0 },
       { blockIndex: 28, sound: 'door knock',      delay: 3.0,  sound2: null,              delay2: null },
       { blockIndex: 31, sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
       { blockIndex: 33, sound: 'train whistle',   delay: 4.0,  sound2: null,              delay2: null },
