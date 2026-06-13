@@ -122,7 +122,7 @@ const HARDCODED_PLANS = {
     moments: [
       { blockIndex: 3,  sound: 'train whistle',   delay: 13.0, sound2: null,              delay2: null },
       { blockIndex: 4,  sound: 'footsteps street',delay: 11.0, sound2: null,              delay2: null },
-      { blockIndex: 9,  sound: 'eating chewing',  delay: 0.5,  sound2: null,              delay2: null },
+      { blockIndex: 9,  sound: 'eating chewing',  delay: 2.5,  sound2: 'drinking gulping', delay2: 7.0 },
       { blockIndex: 12, sound: 'waiter whistle',  delay: 1.0,  sound2: null,              delay2: null },
       { blockIndex: 19, sound: 'scream distant',  delay: 8.0,  sound2: null,              delay2: null },
       { blockIndex: 27, sound: 'dog howling',     delay: 0.5,  sound2: 'drinking gulping', delay2: 9.0 },
